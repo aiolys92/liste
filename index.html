@@ -63,18 +63,30 @@
     <div id="panelList">
       <div class="bugs-table-wrapper">
         <table class="bugs-table">
+          <colgroup>
+            <col style="width:90px">    <!-- Type -->
+            <col style="width:115px">   <!-- Catégorie -->
+            <col style="width:96px">    <!-- ID -->
+            <col>                       <!-- Description (espace restant) -->
+            <col style="width:108px">   <!-- Priorité -->
+            <col style="width:124px">   <!-- État -->
+            <col style="width:44px">    <!-- Assigné -->
+            <col style="width:98px">    <!-- Échéance -->
+            <col style="width:90px">    <!-- Créé -->
+            <col style="width:46px">    <!-- Commentaires -->
+          </colgroup>
           <thead>
             <tr>
-              <th class="col-type"     data-sort="type">Type <span class="sort-arrow">↕</span></th>
-              <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-              <th class="col-id"       data-sort="id">ID <span class="sort-arrow">↕</span></th>
-              <th class="col-description">Description</th>
-              <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
-              <th class="col-state"    data-sort="state">État <span class="sort-arrow">↕</span></th>
-              <th class="col-assignee">👤</th>
-              <th class="col-due"      data-sort="due_date">Échéance <span class="sort-arrow">↕</span></th>
-              <th class="col-date"     data-sort="date">Créé <span class="sort-arrow">↕</span></th>
-              <th class="col-comments" style="width:54px;text-align:center;">💬</th>
+              <th data-sort="type">Type <span class="sort-arrow">↕</span></th>
+              <th data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+              <th data-sort="id">ID <span class="sort-arrow">↕</span></th>
+              <th>Description</th>
+              <th data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+              <th data-sort="state">État <span class="sort-arrow">↕</span></th>
+              <th style="text-align:center;">👤</th>
+              <th data-sort="due_date">Échéance <span class="sort-arrow">↕</span></th>
+              <th data-sort="date">Créé <span class="sort-arrow">↕</span></th>
+              <th style="text-align:center;">💬</th>
             </tr>
           </thead>
           <tbody id="bugsTableBody">

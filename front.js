@@ -169,17 +169,17 @@ const Front = {
       :`<span class="avatar avatar-unassigned" title="Non assigné">·</span>`;
     const dueDateHtml=this.renderDueDate(b.due_date,b.state);
     const blocksHtml=b.blocks?.length?`<span class="block-tag" style="font-size:10px;padding:1px 5px;margin-left:4px;">🔗${b.blocks.length}</span>`:'';
-    return `<tr class="clickable-row" onclick="Front.openDetail('${d(b.id)}')"
-      <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
-      <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
-      <td class="col-id"><span class="bug-id">${d(b.id)}</span>${blocksHtml}</td>
-      <td class="col-description"><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
-      <td class="col-priority"><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
-      <td class="col-state"><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
-      <td class="col-assignee">${avatarHtml}</td>
-      <td class="col-due">${dueDateHtml}</td>
-      <td class="col-date"><div class="date-main">${this.fmtDate(b.date)}</div></td>
-      <td class="col-comments"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
+    return `<tr class="clickable-row" onclick="Front.openDetail('${d(b.id)}')">
+      <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
+      <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
+      <td><span class="bug-id">${d(b.id)}</span>${blocksHtml}</td>
+      <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
+      <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
+      <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
+      <td style="text-align:center;">${avatarHtml}</td>
+      <td>${dueDateHtml}</td>
+      <td><div class="date-main">${this.fmtDate(b.date)}</div></td>
+      <td style="text-align:center;"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
     </tr>`;
   },
 
