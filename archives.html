@@ -76,6 +76,44 @@
     </div>
   </div>
 
+
+  <!-- TOAST -->
+  <div class="notification hidden" id="archNotif"></div>
+
+  <!-- MODALE ACTIONS ARCHIVES -->
+  <div class="modal-overlay hidden" id="archActionOverlay">
+    <div class="modal" style="max-width:320px;">
+      <div class="modal-header">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px;" id="archActionSubtitle"></div>
+          <div class="modal-title" style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="archActionTitle"></div>
+        </div>
+        <button class="modal-close" onclick="Archives.closeActionModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding:8px;">
+
+        <div class="action-modal-item" onclick="Archives.doAction('restore')">
+          <span class="action-modal-icon">♻️</span>
+          <div>
+            <div class="action-modal-label">Restaurer</div>
+            <div class="action-modal-desc">Remettre sur le Mission Board</div>
+          </div>
+        </div>
+
+        <div class="action-modal-sep"></div>
+
+        <div class="action-modal-item danger" onclick="Archives.doAction('delete')">
+          <span class="action-modal-icon">🗑️</span>
+          <div>
+            <div class="action-modal-label">Supprimer</div>
+            <div class="action-modal-desc">Suppression définitive</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script src="supabase.js"></script>
   <script>
   const Archives = {
@@ -86,7 +124,15 @@
     sortField: 'date',
     sortDir: 'desc',
 
-    async init() {
+    isAdmin: false,
+
+  async init() {
+    // Vérifier si admin connecté
+    this.isAdmin = sessionStorage.getItem('bo_auth') === 'ok';
+    if (this.isAdmin) {
+      const th = document.getElementById('thActions');
+      if (th) th.textContent = 'Actions';
+    }
       document.getElementById('loadingRow').style.display = '';
       try {
         this.bugs = await DB.fetchArchived();
@@ -161,6 +207,9 @@
         <td class="col-comments" style="text-align:center;">
           <button class="comments-btn" onclick="Archives.openComments('${d(b.id)}')" title="Commentaires">💬</button>
         </td>
+        ${Archives.isAdmin ? `<td class="col-actions">
+          <button class="action-menu-btn" onclick="Archives.openActionModal('${d(b.id)}')" title="Actions">···</button>
+        </td>` : '<td></td>'}
       </tr>`;
     },
 
@@ -208,6 +257,54 @@
       } catch(e) { document.getElementById('commentsList').innerHTML=`<div class="comments-error">Erreur.</div>`; }
     },
 
+    openActionModal(id) {
+      const bug = this.bugs.find(b => b.id === id); if(!bug) return;
+      const d = this.esc.bind(this);
+      const ts = this.toSlug;
+      document.getElementById('archActionSubtitle').innerHTML = '<span class="bug-id">' + d(bug.id) + '</span>';
+      document.getElementById('archActionTitle').textContent = bug.title;
+      document.getElementById('archActionOverlay').dataset.bugId = id;
+      document.getElementById('archActionOverlay').classList.remove('hidden');
+    },
+
+    closeActionModal() { document.getElementById('archActionOverlay').classList.add('hidden'); },
+
+    async doAction(action) {
+      const id = document.getElementById('archActionOverlay').dataset.bugId;
+      this.closeActionModal();
+      if (action === 'restore') await this.restore(id);
+      if (action === 'delete')  await this.deletePermanent(id);
+    },
+
+    async restore(id) {
+      try {
+        await DB.restoreBug(id);
+        this.bugs = this.bugs.filter(b => b.id !== id);
+        document.getElementById('statsRow').innerHTML = `<div class="stat-chip"><strong>${this.bugs.length}</strong> mission${this.bugs.length>1?'s':''} archivée${this.bugs.length>1?'s':''}</div>`;
+        this.render();
+        this.showNotif('✓ Mission restaurée sur le Mission Board');
+      } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+    },
+
+    async deletePermanent(id) {
+      if (!confirm('Supprimer définitivement cette mission ? Cette action est irréversible.')) return;
+      try {
+        await DB.deleteBug(id);
+        this.bugs = this.bugs.filter(b => b.id !== id);
+        document.getElementById('statsRow').innerHTML = `<div class="stat-chip"><strong>${this.bugs.length}</strong> mission${this.bugs.length>1?'s':''} archivée${this.bugs.length>1?'s':''}</div>`;
+        this.render();
+        this.showNotif('✓ Mission supprimée définitivement');
+      } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+    },
+
+    showNotif(msg, isError=false) {
+      let el = document.getElementById('archNotif');
+      if (!el) { el=document.createElement('div'); el.id='archNotif'; el.className='notification'; document.body.appendChild(el); }
+      el.textContent=msg; el.classList.toggle('error',isError); el.classList.remove('hidden');
+      clearTimeout(this._notifTimer);
+      this._notifTimer=setTimeout(()=>el.classList.add('hidden'),3200);
+    },
+
     closeComments() { document.getElementById('commentsModal').classList.add('hidden'); },
     toSlug(str) { return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); },
     fmtDate(d)  { if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); },
@@ -215,6 +312,7 @@
     esc(str)    { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   };
   document.addEventListener('DOMContentLoaded',()=>Archives.init());
+  document.getElementById('archActionOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('archActionOverlay'))Archives.closeActionModal();});
   </script>
 </body>
 </html>
