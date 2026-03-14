@@ -46,6 +46,7 @@
     <span class="header-title"><span class="header-title-icon">⬡</span>Command Post <span class="backoffice-badge">⚙ Admin</span></span>
     <nav class="header-nav">
       <a href="index.html">← Vue publique</a>
+      <a href="changelog.html">Changelog</a>
       <a href="archives.html">Archives</a>
       <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
       <a href="#" onclick="BO.logout()" style="color:var(--p-critical);border-color:rgba(255,82,82,0.2);">Déconnexion</a>
@@ -210,6 +211,7 @@
             <div class="blocks-list" id="blocksPreview" style="margin-top:6px;"></div>
           </div>
         </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="BO.closeModal()">Annuler</button>
@@ -372,6 +374,7 @@
   </div>
 
   <script src="resizable.js"></script>
+  <script src="utils.js"></script>
   <script src="cache.js"></script>
   <script src="supabase.js"></script>
   <script src="search.js"></script>

@@ -49,7 +49,7 @@ const DB = {
     const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.stats);
     if (cached) return cached;
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at`,
+      `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at,assignee`,
       { headers: SUPABASE_HEADERS }
     );
     if (!res.ok) throw new Error(`Stats error ${res.status}`);

@@ -97,6 +97,36 @@ const Dashboard = {
       </div>
     `;
 
+    // Stats membres
+    if (typeof DB !== 'undefined') {
+      DB.fetchMembers().then(members => {
+        if (!members.length) return;
+        const memberStats = members.map(m => {
+          const assigned = this.bugs.filter(x => x.assignee === m.name);
+          const done     = assigned.filter(x => x.state==='Résolu'||x.state==='Fermé').length;
+          const rate     = assigned.length ? Math.round(done/assigned.length*100) : 0;
+          return { ...m, total: assigned.length, done, rate };
+        }).filter(m => m.total > 0).sort((a,b)=>b.total-a.total);
+
+        if (!memberStats.length) return;
+        const membersHtml = `<div class="db-card" style="margin-top:14px;">
+          <div class="db-card-label">Charge par membre</div>
+          <div class="db-members-grid">
+            ${memberStats.map(m => `
+              <div class="db-member-card">
+                <span class="avatar" style="background:${m.color};width:32px;height:32px;font-size:12px;flex-shrink:0;">${m.initials}</span>
+                <div class="db-member-info">
+                  <div class="db-member-name">${m.name}</div>
+                  <div class="db-member-stats">${m.total} mission${m.total>1?'s':''} · ${m.done} résolues</div>
+                </div>
+                <div class="db-member-rate" title="Taux de résolution">${m.rate}%</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+        document.getElementById('dashContent').insertAdjacentHTML('beforeend', membersHtml);
+      }).catch(()=>{});
+    }
+
     // Animer les compteurs KPI
     this._animateCounters();
     // Animer les barres

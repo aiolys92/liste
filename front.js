@@ -198,7 +198,7 @@ const Front = {
     return `<tr class="clickable-row" onclick="Front.openDetail('${d(b.id)}')">
       <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
       <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
-      <td><span class="bug-id">${d(b.id)}</span>${blocksHtml}</td>
+      <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
       <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
@@ -555,6 +555,12 @@ const Front = {
             <div class="detail-section-label">Missions bloquées</div>
             <div class="detail-blocks">${blocksHtml}</div>
           </div>
+          ${bug.ref_url ? `<div>
+            <div class="detail-section-label">Lien de référence</div>
+            <a href="${d(bug.ref_url)}" target="_blank" rel="noopener"
+              onclick="event.stopPropagation()"
+              style="font-size:13px;color:var(--blue-bright);word-break:break-all;">${d(bug.ref_url)}</a>
+          </div>` : ''}
         </div>
         <div class="detail-footer">
           <button class="btn btn-secondary" onclick="Front.closeDetail()">Fermer</button>

@@ -112,6 +112,7 @@
     </div>
   </main>
 
+  <script src="utils.js"></script>
   <script src="cache.js"></script>
   <script src="supabase.js"></script>
   <script>
@@ -267,7 +268,25 @@
       return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
     }
   };
-  document.addEventListener('DOMContentLoaded', () => CL.init());
+  // Vérifier auth admin
+  if (sessionStorage.getItem('bo_auth') !== 'ok') {
+    document.body.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+        min-height:100vh;gap:16px;font-family:'DM Sans',sans-serif;">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;
+          letter-spacing:2px;text-transform:uppercase;color:var(--p-critical);">Accès refusé</div>
+        <div style="color:var(--text-muted);font-size:14px;">Le Changelog est réservé aux administrateurs.</div>
+        <a href="login.html" style="color:var(--gold-mid);font-size:13px;text-decoration:none;">
+          → Se connecter
+        </a>
+        <a href="index.html" style="color:var(--text-muted);font-size:12px;text-decoration:none;">
+          ← Retour au Mission Board
+        </a>
+      </div>`;
+    document.body.style.cssText = 'background:#080a0f;';
+  } else {
+    document.addEventListener('DOMContentLoaded', () => CL.init());
+  }
   </script>
 </body>
 </html>

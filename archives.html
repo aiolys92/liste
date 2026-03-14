@@ -119,7 +119,13 @@
     </div>
   </div>
 
+  <script src="utils.js"></script>
   <script src="cache.js"></script>
+  <!-- OVERLAY DÉTAIL -->
+  <div class="modal-overlay hidden" id="detailOverlay">
+    <div id="detailModal"></div>
+  </div>
+
   <script src="supabase.js"></script>
   <script>
   const Archives = {
@@ -202,7 +208,7 @@
 
     renderRow(b) {
       const ts=this.toSlug,d=this.esc.bind(this);
-      return `<tr style="opacity:.75;">
+      return `<tr style="opacity:.75;cursor:pointer;" onclick="Archives.openDetail('${d(b.id)}')">
         <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
         <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
         <td class="col-id"><span class="bug-id">${d(b.id)}</span></td>
@@ -211,10 +217,10 @@
         <td class="col-state"><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
         <td class="col-date"><div class="bug-date"><div class="date-main">${this.fmtDate(b.date)}</div></div></td>
         <td class="col-comments" style="text-align:center;">
-          <button class="comments-btn" onclick="Archives.openComments('${d(b.id)}')" title="Commentaires">💬</button>
+          <button class="comments-btn" onclick="event.stopPropagation();Archives.openComments('${d(b.id)}')" title="Commentaires">💬</button>
         </td>
         ${Archives.isAdmin ? `<td class="col-actions">
-          <button class="action-menu-btn" onclick="Archives.openActionModal('${d(b.id)}')" title="Actions">···</button>
+          <button class="action-menu-btn" onclick="event.stopPropagation();Archives.openActionModal('${d(b.id)}')" title="Actions">···</button>
         </td>` : '<td></td>'}
       </tr>`;
     },
@@ -311,6 +317,57 @@
       this._notifTimer=setTimeout(()=>el.classList.add('hidden'),3200);
     },
 
+    openDetail(id) {
+      const bug = this.bugs.find(b => b.id === id); if (!bug) return;
+      const d  = this.esc.bind(this);
+      const ts = this.toSlug;
+      document.getElementById('detailModal').innerHTML = `
+        <div class="modal detail-modal">
+          <div class="detail-header-band">
+            <div class="detail-id-row">
+              <span class="bug-id" onclick="event.stopPropagation();copyId('${d(bug.id)}',this)" title="Copier">${d(bug.id)}</span>
+              <span class="badge badge-type-${ts(bug.type)}">${d(bug.type)}</span>
+              <span class="badge badge-cat-${ts(bug.category)}">${d(bug.category)}</span>
+              <span class="archived-banner" style="font-size:10px;padding:2px 8px;">📦 Archivée</span>
+            </div>
+            <div class="detail-title">${d(bug.title)}</div>
+            <div class="detail-badges">
+              <span class="badge badge-prio-${ts(bug.priority)}"><span class="badge-dot"></span>${d(bug.priority)}</span>
+              <span class="badge badge-state-${ts(bug.state)}"><span class="badge-dot"></span>${d(bug.state)}</span>
+            </div>
+          </div>
+          <div class="detail-body">
+            <div>
+              <div class="detail-section-label">Description</div>
+              <div class="detail-description">${d(bug.description)}</div>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-field"><div class="detail-section-label">Assigné à</div>
+                <div class="detail-field-value">${d(bug.assignee)||'<span style="color:var(--text-faint)">Non assigné</span>'}</div></div>
+              <div class="detail-field"><div class="detail-section-label">Date arrivée</div>
+                <div class="detail-field-value">${this.fmtDate(bug.date)}</div></div>
+              <div class="detail-field"><div class="detail-section-label">Échéance</div>
+                <div class="detail-field-value">${bug.due_date ? this.fmtDate(bug.due_date) : '<span style="color:var(--text-faint)">—</span>'}</div></div>
+              <div class="detail-field"><div class="detail-section-label">Priorité</div>
+                <div class="detail-field-value"><span class="badge badge-prio-${ts(bug.priority)}"><span class="badge-dot"></span>${d(bug.priority)}</span></div></div>
+            </div>
+            ${bug.ref_url ? `<div><div class="detail-section-label">Lien de référence</div>
+              <a href="${d(bug.ref_url)}" target="_blank" onclick="event.stopPropagation()"
+                style="font-size:13px;color:var(--blue-bright);word-break:break-all;">${d(bug.ref_url)}</a></div>` : ''}
+          </div>
+          <div class="detail-footer">
+            <button class="btn btn-secondary" onclick="Archives.closeDetail()">Fermer</button>
+            <button class="btn btn-secondary" onclick="Archives.closeDetail();Archives.openComments('${d(bug.id)}')">💬 Commentaires</button>
+            ${this.isAdmin ? `<button class="btn btn-primary" onclick="Archives.closeDetail();Archives.openActionModal('${d(bug.id)}')">⚡ Actions</button>` : ''}
+          </div>
+        </div>`;
+      document.getElementById('detailOverlay').classList.remove('hidden');
+    },
+
+    closeDetail() {
+      document.getElementById('detailOverlay').classList.add('hidden');
+    },
+
     closeComments() { document.getElementById('commentsModal').classList.add('hidden'); },
     toSlug(str) { return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); },
     fmtDate(d)  { if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); },
@@ -319,6 +376,7 @@
   };
   document.addEventListener('DOMContentLoaded',()=>Archives.init());
   document.getElementById('archActionOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('archActionOverlay'))Archives.closeActionModal();});
+  document.getElementById('detailOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('detailOverlay'))Archives.closeDetail();});
   </script>
 </body>
 </html>

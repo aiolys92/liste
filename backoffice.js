@@ -264,7 +264,7 @@ const BO = {
       <td><input type="checkbox" class="row-checkbox" data-id="${d(b.id)}" ${isChecked?'checked':''} onchange="BO.toggleSelect('${d(b.id)}',this.checked)" onclick="event.stopPropagation()"></td>
       <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
       <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
-      <td><span class="bug-id">${d(b.id)}</span>${blocksHtml}</td>
+      <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
       <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td>${this.renderStateDropdown(b)}</td>
@@ -434,6 +434,7 @@ const BO = {
     document.getElementById('fDescription').value=bug.description;
     document.getElementById('fDate').value     =bug.date;
     document.getElementById('fDueDate').value  =bug.due_date||'';
+    document.getElementById('fRefUrl').value  =bug.ref_url||'';
     // Blocks
     const fb=document.getElementById('fBlocks');
     [...fb.options].forEach(o=>{ o.selected=(bug.blocks||[]).includes(o.value)&&o.value!==id; });
@@ -468,6 +469,7 @@ const BO = {
       assignee:document.getElementById('fAssignee').value||null,
       title, description, date,
       due_date:document.getElementById('fDueDate').value||null,
+      ref_url: document.getElementById('fRefUrl').value.trim()||null,
       blocks:  blocks.length?blocks:null
     };
     const btn=document.querySelector('.modal-footer .btn-primary');
@@ -533,6 +535,7 @@ const BO = {
       this.bugs=this.bugs.filter(b=>b.id!==id);
       this.renderStats();this.render();
       this.showNotif(`✓ Mission ${id} archivée`);
+      showToast(`📦 Mission ${id} archivée`);
     }catch(e){this.showNotif('Erreur : '+e.message,true);}
   },
 
@@ -1078,6 +1081,7 @@ const BO = {
             '<div class="detail-field"><div class="detail-section-label">Priorité</div><div class="detail-field-value"><span class="badge badge-prio-' + ts(bug.priority) + '"><span class="badge-dot"></span>' + d(bug.priority) + '</span></div></div>' +
           '</div>' +
           '<div><div class="detail-section-label">Missions bloquées</div><div class="detail-blocks">' + blocksHtml + '</div></div>' +
+          (bug.ref_url ? '<div style="margin-top:12px;"><div class="detail-section-label">Lien de référence</div><a href="' + d(bug.ref_url) + '" target="_blank" rel="noopener" style="font-size:13px;color:var(--blue-bright);word-break:break-all;">' + d(bug.ref_url) + '</a></div>' : '') +
         '</div>' +
         '<div class="detail-footer">' +
           '<button class="btn btn-secondary" onclick="BO.closeDetail()">Fermer</button>' +
