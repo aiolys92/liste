@@ -1846,3 +1846,53 @@ body.light .kanban-card { background: var(--bg-raised); }
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ============================================
+   COLONNES REDIMENSIONNABLES
+   ============================================ */
+.bugs-table th {
+  position: relative;
+  user-select: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.col-resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.col-resizer::after {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 60%;
+  background: var(--border-base);
+  border-radius: 1px;
+  transition: background 0.15s, width 0.15s;
+}
+
+.col-resizer:hover::after,
+.col-resizer.resizing::after {
+  background: var(--gold-mid);
+  width: 2px;
+}
+
+.bugs-table.resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.bugs-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
