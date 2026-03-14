@@ -27,11 +27,17 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-secondary" id="btnExportCSV" style="font-size:12px;padding:7px 14px;">↓ Export CSV</button>
           <div class="view-toggle">
-            <button class="view-btn view-btn-active" id="btnViewList">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="2" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="6.5" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="11" width="13" height="2" rx="1" fill="currentColor"/></svg>Liste
+            <button class="view-btn view-btn-active" id="btnViewList" title="Liste">
+              <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><rect x="1" y="2" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="6.5" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="11" width="13" height="2" rx="1" fill="currentColor"/></svg>
+              Liste
             </button>
-            <button class="view-btn" id="btnViewKanban">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="4" height="13" rx="1" fill="currentColor"/><rect x="5.5" y="1" width="4" height="9" rx="1" fill="currentColor"/><rect x="10" y="1" width="4" height="11" rx="1" fill="currentColor"/></svg>Kanban
+            <button class="view-btn" id="btnViewKanban" title="Kanban">
+              <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="4" height="13" rx="1" fill="currentColor"/><rect x="5.5" y="1" width="4" height="9" rx="1" fill="currentColor"/><rect x="10" y="1" width="4" height="11" rx="1" fill="currentColor"/></svg>
+              Kanban
+            </button>
+            <button class="view-btn" id="btnViewTimeline" title="Timeline">
+              <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><rect x="1" y="3" width="5" height="2" rx="1" fill="currentColor"/><rect x="1" y="6.5" width="9" height="2" rx="1" fill="currentColor"/><rect x="1" y="10" width="6" height="2" rx="1" fill="currentColor"/><line x1="13" y1="1" x2="13" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Timeline
             </button>
           </div>
         </div>
@@ -41,7 +47,8 @@
 
     <div id="errorBanner" style="display:none;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:var(--r-md);color:var(--p-critical);padding:12px 18px;margin-bottom:16px;font-size:13px;"></div>
 
-    <div class="filters-bar">
+    <!-- Filtres (masqués en timeline) -->
+    <div class="filters-bar" id="filtersBar">
       <div class="filter-group"><span class="filter-label">Type</span><select class="filter-select" id="filterType"><option value="">Tous</option></select></div>
       <div class="filter-divider"></div>
       <div class="filter-group"><span class="filter-label">Priorité</span><select class="filter-select" id="filterPriority"><option value="">Toutes</option></select></div>
@@ -51,6 +58,7 @@
       <span class="filter-count" id="filterCount"></span>
     </div>
 
+    <!-- PANELS -->
     <div id="panelList">
       <div class="bugs-table-wrapper">
         <table class="bugs-table">
@@ -79,6 +87,9 @@
     <div id="panelKanban" style="display:none;">
       <div class="kanban-board" id="kanbanBoard"></div>
     </div>
+
+    <div id="panelTimeline" style="display:none;"></div>
+
   </main>
 
   <!-- MODALE COMMENTAIRES -->
