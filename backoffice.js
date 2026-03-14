@@ -819,6 +819,44 @@ const BO = {
   // ============================================================
   // UTILS
   // ============================================================
+
+  // ============================================================
+  // MODALE ACTIONS (···)
+  // ============================================================
+  openActionModal(id) {
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    const d  = this.esc.bind(this);
+    const ts = this.toSlug;
+    const member = this.members.find(m => m.name === bug.assignee);
+    const avatarHtml = member
+      ? '<span class="avatar" style="background:' + member.color + ';width:20px;height:20px;font-size:9px;margin-left:4px;">' + d(member.initials) + '</span>'
+      : '';
+    document.getElementById('actionModalSubtitle').innerHTML =
+      '<span class="bug-id">' + d(bug.id) + '</span>' +
+      '<span class="badge badge-prio-' + ts(bug.priority) + '" style="margin-left:6px;font-size:10px;"><span class="badge-dot"></span>' + d(bug.priority) + '</span>' +
+      avatarHtml;
+    document.getElementById('actionModalTitle').textContent = bug.title;
+    document.getElementById('actionModalOverlay').dataset.bugId = id;
+    document.getElementById('actionModalOverlay').classList.remove('hidden');
+  },
+
+  closeActionModal() {
+    document.getElementById('actionModalOverlay').classList.add('hidden');
+  },
+
+  doAction(action) {
+    const id = document.getElementById('actionModalOverlay').dataset.bugId;
+    this.closeActionModal();
+    setTimeout(() => {
+      if (action === 'edit')     this.openEdit(id);
+      if (action === 'comments') this.openComments(id);
+      if (action === 'history')  this.openHistory(id);
+      if (action === 'archive')  this.archiveMission(id);
+      if (action === 'delete')   this.openDelete(id);
+    }, 80);
+  },
+
   logout(){sessionStorage.removeItem('bo_auth');window.location.href='login.html';},
   showNotif(msg,isError=false){
     const el=document.getElementById('notification');
