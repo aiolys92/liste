@@ -1807,3 +1807,29 @@ body.light .kanban-card { background: var(--bg-raised); }
 
 /* Ligne cliquable */
 .bugs-table tbody tr.clickable-row { cursor: pointer; }
+
+/* Description — colonne prioritaire, plus de place */
+.col-description {
+  width: auto;
+  min-width: 280px;
+}
+
+/* Forcer les autres colonnes à rester compactes */
+.col-type     { width: 90px;  }
+.col-category { width: 115px; }
+.col-id       { width: 95px;  }
+.col-priority { width: 105px; }
+.col-state    { width: 120px; }
+.col-assignee { width: 44px;  }
+.col-due      { width: 95px;  }
+.col-date     { width: 90px;  }
+.col-comments { width: 46px;  }
+.col-select   { width: 34px;  }
+.col-actions  { width: 46px;  }
+
+/* Plus de contenu dans les cellules description */
+.bug-desc { max-width: none; }
+.bug-desc-detail {
+  -webkit-line-clamp: 3;
+  color: var(--text-muted);
+}
