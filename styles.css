@@ -1367,3 +1367,10 @@ body.light .kanban-card { background: var(--bg-raised); }
   background: var(--border-dim);
   margin: 6px 4px;
 }
+
+/* Masquer le dot sur type et catégorie (toutes valeurs) */
+.col-type .badge-dot,
+.col-category .badge-dot,
+.kanban-col-badge .badge-dot {
+  display: none;
+}
