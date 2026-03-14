@@ -434,7 +434,7 @@ const BO = {
     document.getElementById('fDescription').value=bug.description;
     document.getElementById('fDate').value     =bug.date;
     document.getElementById('fDueDate').value  =bug.due_date||'';
-    document.getElementById('fRefUrl').value  =bug.ref_url||'';
+    if(document.getElementById('fRefUrl')) document.getElementById('fRefUrl').value=bug.ref_url||'';
     // Blocks
     const fb=document.getElementById('fBlocks');
     [...fb.options].forEach(o=>{ o.selected=(bug.blocks||[]).includes(o.value)&&o.value!==id; });
@@ -469,7 +469,7 @@ const BO = {
       assignee:document.getElementById('fAssignee').value||null,
       title, description, date,
       due_date:document.getElementById('fDueDate').value||null,
-      ref_url: document.getElementById('fRefUrl').value.trim()||null,
+      ref_url: document.getElementById('fRefUrl')?.value.trim()||null,
       blocks:  blocks.length?blocks:null
     };
     const btn=document.querySelector('.modal-footer .btn-primary');

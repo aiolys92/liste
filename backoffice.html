@@ -204,13 +204,21 @@
           <div class="form-group full-width"><label class="form-label">Description *</label><textarea class="form-textarea" id="fDescription" placeholder="Description détaillée…"></textarea></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Date d'arrivée *</label><input type="date" class="form-input" id="fDate"></div>
           <div class="form-group">
+            <label class="form-label">Date d'arrivée *</label>
+            <input type="date" class="form-input" id="fDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lien de référence</label>
+            <input type="url" class="form-input" id="fRefUrl" placeholder="https://figma.com/…">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group full-width">
             <label class="form-label">Bloque ces missions</label>
             <select class="form-select" id="fBlocks" multiple style="height:70px;" onchange="BO.updateBlocksPreview()"></select>
             <div class="blocks-list" id="blocksPreview" style="margin-top:6px;"></div>
           </div>
-        </div>
         </div>
       </div>
       <div class="modal-footer">
