@@ -7,99 +7,153 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8a030">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* ---- DASHBOARD ---- */
-    .dash-kpi-row {
+    /* ============================================
+       DASHBOARD — Styles
+       ============================================ */
+
+    /* KPI Grid */
+    .db-kpi-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 12px;
-      margin-bottom: 20px;
-    }
-    @media (max-width: 900px) { .dash-kpi-row { grid-template-columns: repeat(3,1fr); } }
-    @media (max-width: 500px) { .dash-kpi-row { grid-template-columns: repeat(2,1fr); } }
-
-    .dash-kpi {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-base);
-      border-radius: var(--r-lg);
-      padding: 16px 18px;
-      text-align: center;
-      transition: border-color 0.2s, transform 0.15s;
-    }
-    .dash-kpi:hover { border-color: var(--border-strong); transform: translateY(-2px); }
-
-    .dash-kpi-value {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 36px;
-      font-weight: 700;
-      color: var(--text-bright);
-      line-height: 1;
-      margin-bottom: 6px;
-    }
-    .dash-kpi-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 600;
-    }
-
-    .dash-charts-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
       margin-bottom: 16px;
     }
-    @media (max-width: 900px) { .dash-charts-row { grid-template-columns: 1fr; } }
+    @media (max-width: 1000px) { .db-kpi-grid { grid-template-columns: repeat(3,1fr); } }
+    @media (max-width: 560px)  { .db-kpi-grid { grid-template-columns: repeat(2,1fr); } }
 
-    .dash-card {
+    .db-kpi {
       background: var(--bg-surface);
       border: 1px solid var(--border-base);
       border-radius: var(--r-lg);
-      padding: 18px 20px;
+      padding: 18px 16px 14px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s;
+      cursor: default;
+    }
+    .db-kpi::before {
+      content: '';
+      position: absolute; inset: 0 0 auto 0; height: 2px;
+      background: var(--kpi-color, var(--gold-dim));
+      opacity: 0.6;
+    }
+    .db-kpi:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+
+    .db-kpi-num {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 6px;
+      letter-spacing: -0.5px;
+    }
+    .db-kpi-key {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+    .db-kpi-sub {
+      font-size: 10px;
+      color: var(--text-faint);
+      line-height: 1.4;
+    }
+
+    /* Rows */
+    .db-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .db-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px) {
+      .db-row-2, .db-row-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .db-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      border-radius: var(--r-lg);
+      padding: 20px;
       position: relative;
       overflow: hidden;
     }
-    .dash-card::before {
+    .db-card::after {
       content: '';
       position: absolute; inset: 0 0 auto 0; height: 1px;
       background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
     }
-    .dash-card-wide { margin-bottom: 0; }
 
-    .dash-card-title {
+    .db-card-label {
       font-family: 'Rajdhani', sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     /* Donut */
-    .dash-donut-wrap { display: flex; align-items: center; gap: 16px; }
-    .dash-legend { flex: 1; display: flex; flex-direction: column; gap: 5px; }
-    .dash-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-base); }
-    .dash-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .dash-legend-key { flex: 1; }
-    .dash-legend-val { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+    .db-donut-wrap { display: flex; align-items: center; gap: 18px; }
+    .db-donut-legend { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .db-donut-leg {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--text-base);
+    }
+    .db-donut-leg-key { flex: 1; }
+    .db-donut-leg-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px; color: var(--text-muted);
+    }
 
-    /* Barres */
-    .dash-bars { display: flex; flex-direction: column; gap: 8px; }
-    .dash-bar-row { display: flex; align-items: center; gap: 8px; }
-    .dash-bar-label { font-size: 11px; color: var(--text-base); width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .dash-bar-track { flex: 1; height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; }
-    .dash-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
-    .dash-bar-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); width: 24px; text-align: right; flex-shrink: 0; }
+    /* Priorités */
+    .db-prio-bars { display: flex; flex-direction: column; gap: 10px; }
+    .db-prio-row  { display: flex; align-items: center; gap: 10px; }
+    .db-prio-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; margin-right: 5px; }
+    .db-prio-label { font-size: 12px; color: var(--text-base); width: 72px; flex-shrink: 0; display: flex; align-items: center; }
+    .db-prio-track { flex: 1; height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; }
+    .db-prio-count { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; width: 22px; text-align: right; flex-shrink: 0; }
+
+    /* Gauge */
+    .db-gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .db-gauge-pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .db-gauge-pill {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--text-muted);
+      background: var(--bg-raised); border: 1px solid var(--border-dim);
+      border-radius: 10px; padding: 3px 9px;
+    }
+    .db-gauge-pill strong { color: var(--text-bright); font-weight: 700; }
+
+    /* Catégories bulles */
+    .db-cat-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+      min-height: 120px;
+    }
 
     /* Timeline */
-    .dash-timeline-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+    .db-card-timeline { }
 
-    .dash-empty { color: var(--text-faint); font-size: 12px; text-align: center; padding: 20px 0; }
+    .db-empty {
+      color: var(--text-faint); font-size: 12px;
+      text-align: center; padding: 24px 0;
+    }
   </style>
 </head>
 <body>
@@ -118,18 +172,24 @@
   </header>
 
   <main class="main-container">
-    <div class="page-header">
-      <h1>Dashboard</h1>
-      <p>Vue d'ensemble des missions en cours.</p>
-    </div>
 
-    <div id="dashError" style="display:none;color:var(--p-critical);font-size:13px;margin-bottom:16px;">
-      Erreur de chargement des statistiques.
+    <div class="page-header">
+      <div class="page-header-row">
+        <div>
+          <h1>Dashboard</h1>
+          <p>Vue d'ensemble des missions — priorités, états et activité récente.</p>
+        </div>
+        <button class="btn btn-secondary" style="font-size:12px;padding:7px 14px;"
+          onclick="Cache.invalidate('stats');Dashboard.bugs=[];Dashboard.init()">↺ Actualiser</button>
+      </div>
     </div>
 
     <div id="dashContent">
-      <div style="text-align:center;padding:60px;color:var(--text-muted);font-size:13px;opacity:.5">Chargement…</div>
+      <div style="text-align:center;padding:80px;color:var(--text-muted);font-size:13px;opacity:.5">
+        Chargement…
+      </div>
     </div>
+
   </main>
 
   <script src="cache.js"></script>
