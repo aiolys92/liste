@@ -77,6 +77,7 @@ const Front = {
     });
     document.getElementById('btnViewList')?.addEventListener('click',()=>this.switchView('list'));
     document.getElementById('btnViewKanban')?.addEventListener('click',()=>this.switchView('kanban'));
+    document.getElementById('btnViewTimeline')?.addEventListener('click',()=>this.switchView('timeline'));
     document.getElementById('btnExportCSV')?.addEventListener('click',()=>this.exportCSV());
     document.getElementById('themeToggle')?.addEventListener('click',()=>this.toggleTheme());
     document.getElementById('commentsModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('commentsModal'))this.closeComments();});
@@ -139,7 +140,7 @@ const Front = {
     });
   },
 
-  render(){if(this.view==='list')this.renderList();else this.renderKanban();},
+  render(){if(this.view==='list')this.renderList();else if(this.view==='kanban')this.renderKanban();else if(this.view==='timeline')this.renderTimeline();},
 
   renderList() {
     const filtered=this.getSorted(this.getFiltered());
