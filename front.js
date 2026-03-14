@@ -4,27 +4,32 @@
 
 const Front = {
   bugs: [],
+  config: {
+    types:      ['Bug','Amélioration','Régression'],
+    categories: ['Gameplay','Interface','Graphismes','Audio','Serveur','Texte','Combat','Quête'],
+    priorities: ['Critique','Haute','Moyenne','Basse','Mineure'],
+    states:     ['Nouveau','En cours','Résolu','Fermé','Rejeté','En attente']
+  },
   currentPage: 1,
   itemsPerPage: 10,
   sortField: 'date',
   sortDir: 'desc',
-  filters: { type: '', category: '', priority: '', state: '', search: '' },
-
-  types:      ['Bug','Amélioration','Régression'],
-  categories: ['Gameplay','Interface','Graphismes','Audio','Serveur','Texte','Combat','Quête'],
-  priorities: ['Critique','Haute','Moyenne','Basse','Mineure'],
-  states:     ['Nouveau','En cours','Résolu','Fermé','Rejeté','En attente'],
+  filters: { type:'', category:'', priority:'', state:'', search:'' },
 
   async init() {
-    this.populateFilters();
-    this.bindEvents();
     this.showLoading(true);
     try {
-      this.bugs = await DB.fetchBugs();
+      // Charger bugs ET config en parallèle
+      const [bugs, cfg] = await Promise.all([DB.fetchBugs(), DB.fetchConfig()]);
+      this.bugs = bugs;
+      if (cfg.types)      this.config.types      = cfg.types;
+      if (cfg.categories) this.config.categories = cfg.categories;
     } catch(e) {
       this.showError('Impossible de charger les données. Vérifiez votre connexion.');
     }
     this.showLoading(false);
+    this.populateFilters();
+    this.bindEvents();
     this.renderStats();
     this.render();
   },
@@ -42,12 +47,17 @@ const Front = {
   populateFilters() {
     const sel = (id, arr) => {
       const el = document.getElementById(id);
-      arr.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); });
+      el.innerHTML = `<option value="">Tous</option>`;
+      arr.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        el.appendChild(o);
+      });
     };
-    sel('filterType', this.types);
-    sel('filterCategory', this.categories);
-    sel('filterPriority', this.priorities);
-    sel('filterState', this.states);
+    sel('filterType',     this.config.types);
+    sel('filterCategory', this.config.categories);
+    sel('filterPriority', this.config.priorities);
+    sel('filterState',    this.config.states);
   },
 
   bindEvents() {
@@ -129,11 +139,10 @@ const Front = {
     });
 
     const tbody = document.getElementById('bugsTableBody');
-    if (page.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucun bug ne correspond aux filtres sélectionnés.</p></div></td></tr>`;
-    } else {
-      tbody.innerHTML = page.map(b => this.renderRow(b)).join('');
-    }
+    tbody.innerHTML = page.length === 0
+      ? `<tr><td colspan="7"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucun bug ne correspond aux filtres.</p></div></td></tr>`
+      : page.map(b => this.renderRow(b)).join('');
+
     this.renderPagination(total, totalPages);
   },
 
@@ -157,7 +166,7 @@ const Front = {
   },
 
   renderPagination(total, totalPages) {
-    const el = document.getElementById('pagination');
+    const el    = document.getElementById('pagination');
     const start = (this.currentPage - 1) * this.itemsPerPage + 1;
     const end   = Math.min(this.currentPage * this.itemsPerPage, total);
     let btns = `<button class="page-btn" onclick="Front.goPage(${this.currentPage-1})" ${this.currentPage===1?'disabled':''}>‹</button>`;
@@ -182,13 +191,10 @@ const Front = {
   toSlug(str) {
     return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   },
-
   fmtDate(d) {
     if (!d) return '—';
-    const dt = new Date(d);
-    return dt.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+    return new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
   },
-
   esc(str) {
     return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
