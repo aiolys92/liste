@@ -13,6 +13,9 @@ const BO = {
   members: [],
   requests: [],
   currentReqTab: 'pending',
+  serverPage: 1,
+  perPage: 20,
+  totalBugs: 0,
   config: {
     types:      [],
     categories: [],
@@ -146,7 +149,7 @@ const BO = {
       });
     });
     document.getElementById('searchInput')?.addEventListener('input',e=>{
-      this.filters.search=e.target.value.toLowerCase(); this.currentPage=1; this.render();
+      this.filters.search=e.target.value.toLowerCase(); this.currentPage=1; clearTimeout(this._searchTimer); this._searchTimer=setTimeout(()=>this.render(),300);
     });
     document.querySelectorAll('[data-sort]').forEach(th=>{
       th.addEventListener('click',()=>{
@@ -335,21 +338,22 @@ const BO = {
 
   renderPagination(total,totalPages) {
     const el=document.getElementById('pagination');
-    const s=(this.currentPage-1)*this.itemsPerPage+1;
-    const e=Math.min(this.currentPage*this.itemsPerPage,total);
+    const s=(this.currentPage-1)*this.perPage+1;
+    const e=Math.min(this.currentPage*this.perPage,total);
+    const totalPages2=Math.max(1,Math.ceil(total/this.perPage));
     let btns=`<button class="page-btn" onclick="BO.goPage(${this.currentPage-1})" ${this.currentPage===1?'disabled':''}>‹</button>`;
-    for(let i=1;i<=totalPages;i++){
-      if(totalPages>7&&Math.abs(i-this.currentPage)>2&&i!==1&&i!==totalPages){
-        if(i===2||i===totalPages-1)btns+=`<span class="page-btn" style="cursor:default;border:none;opacity:.4">…</span>`;
+    for(let i=1;i<=totalPages2;i++){
+      if(totalPages2>7&&Math.abs(i-this.currentPage)>2&&i!==1&&i!==totalPages2){
+        if(i===2||i===totalPages2-1)btns+=`<span class="page-btn" style="cursor:default;border:none;opacity:.4">…</span>`;
         continue;
       }
       btns+=`<button class="page-btn ${i===this.currentPage?'active':''}" onclick="BO.goPage(${i})">${i}</button>`;
     }
-    btns+=`<button class="page-btn" onclick="BO.goPage(${this.currentPage+1})" ${this.currentPage===totalPages?'disabled':''}>›</button>`;
+    btns+=`<button class="page-btn" onclick="BO.goPage(${this.currentPage+1})" ${this.currentPage===totalPages2?'disabled':''}>›</button>`;
     el.innerHTML=`<span class="pagination-info">Affichage ${total===0?0:s}–${e} sur ${total}</span><div class="pagination-controls">${btns}</div>`;
   },
 
-  goPage(p){const t=Math.max(1,Math.ceil(this.getFiltered().length/this.itemsPerPage));if(p<1||p>t)return;this.currentPage=p;this.render();window.scrollTo({top:0,behavior:'smooth'});},
+  goPage(p){const t=Math.max(1,Math.ceil(this.totalBugs/this.perPage));if(p<1||p>t)return;this.currentPage=p;this.render();window.scrollTo({top:0,behavior:'smooth'});},
 
   // ============================================================
   // SÉLECTION GROUPÉE

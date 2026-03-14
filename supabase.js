@@ -19,6 +19,41 @@ const DB = {
     return res.json();
   },
 
+  // Pagination serveur — retourne { data, total }
+  async fetchBugsPaged({ page=1, perPage=20, filters={}, sort='date', dir='desc', includeArchived=false } = {}) {
+    const from  = (page-1)*perPage;
+    const to    = from + perPage - 1;
+    const heads = { ...SUPABASE_HEADERS, 'Prefer': 'count=exact', 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
+
+    let q = includeArchived ? '' : 'or=(archived.eq.false,archived.is.null)&';
+    if (filters.type)     q += `type=eq.${encodeURIComponent(filters.type)}&`;
+    if (filters.category) q += `category=eq.${encodeURIComponent(filters.category)}&`;
+    if (filters.priority) q += `priority=eq.${encodeURIComponent(filters.priority)}&`;
+    if (filters.state)    q += `state=eq.${encodeURIComponent(filters.state)}&`;
+    if (filters.search)   q += `or=(title.ilike.*${encodeURIComponent(filters.search)}*,description.ilike.*${encodeURIComponent(filters.search)}*,id.ilike.*${encodeURIComponent(filters.search)}*)&`;
+
+    const sortDir = dir === 'asc' ? 'asc' : 'desc';
+    const validSort = ['date','id','priority','state','type','category','due_date'].includes(sort) ? sort : 'date';
+    q += `order=${validSort}.${sortDir}`;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: heads });
+    if (!res.ok) throw new Error(`Fetch paged error ${res.status}`);
+    const range = res.headers.get('Content-Range') || '';
+    const total = parseInt(range.split('/')[1]) || 0;
+    const data  = await res.json();
+    return { data, total };
+  },
+
+  // Stats pour dashboard (compte par état/priorité/catégorie)
+  async fetchStats() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at`,
+      { headers: SUPABASE_HEADERS }
+    );
+    if (!res.ok) throw new Error(`Stats error ${res.status}`);
+    return res.json();
+  },
+
   async fetchArchived() {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/bugs?archived=eq.true&order=date.desc,id.desc`,

@@ -8,7 +8,8 @@ const Front = {
   config: { types:[], categories:[], priorities:['Critique','Haute','Moyenne','Basse','Mineure'], states:['Nouveau','En cours','Résolu','Fermé','Rejeté','En attente'] },
   view: 'list',
   currentPage: 1,
-  itemsPerPage: 10,
+  perPage: 20,
+  totalBugs: 0,
   sortField: 'date',
   sortDir: 'desc',
   filters: { type:'', priority:'', state:'', search:'' },
@@ -65,7 +66,8 @@ const Front = {
       });
     });
     document.getElementById('searchInput')?.addEventListener('input',e=>{
-      this.filters.search=e.target.value.toLowerCase();this.currentPage=1;this.render();
+      this.filters.search=e.target.value.toLowerCase();this.currentPage=1;
+      clearTimeout(this._searchTimer);this._searchTimer=setTimeout(()=>this.render(),300);
     });
     document.querySelectorAll('[data-sort]').forEach(th=>{
       th.addEventListener('click',()=>{
@@ -143,22 +145,38 @@ const Front = {
 
   render(){if(this.view==='list')this.renderList();else if(this.view==='kanban')this.renderKanban();else if(this.view==='timeline')this.renderTimeline();},
 
-  renderList() {
-    const filtered=this.getSorted(this.getFiltered());
-    const total=filtered.length;
-    const totalPages=Math.max(1,Math.ceil(total/this.itemsPerPage));
-    this.currentPage=Math.min(this.currentPage,totalPages);
-    const page=filtered.slice((this.currentPage-1)*this.itemsPerPage,(this.currentPage)*this.itemsPerPage);
-    document.getElementById('filterCount').textContent=`${total} résultat${total>1?'s':''}`;
-    document.querySelectorAll('[data-sort]').forEach(th=>{
-      th.classList.toggle('sorted',th.dataset.sort===this.sortField);
-      const a=th.querySelector('.sort-arrow');if(a)a.textContent=th.dataset.sort===this.sortField?(this.sortDir==='asc'?'↑':'↓'):'↕';
+  async renderList() {
+    this.showLoading(true);
+    try {
+      const result = await DB.fetchBugsPaged({
+        page: this.currentPage,
+        perPage: this.perPage,
+        filters: this.filters,
+        sort: this.sortField,
+        dir: this.sortDir
+      });
+      this.bugs = result.data;
+      this.totalBugs = result.total;
+    } catch(e) {
+      this.showError('Erreur chargement : ' + e.message);
+      this.showLoading(false);
+      return;
+    }
+    this.showLoading(false);
+    const total = this.totalBugs;
+    const totalPages = Math.max(1, Math.ceil(total / this.perPage));
+    this.currentPage = Math.min(this.currentPage, totalPages);
+    document.getElementById('filterCount').textContent = `${total} résultat${total>1?'s':''}`;
+    document.querySelectorAll('[data-sort]').forEach(th => {
+      th.classList.toggle('sorted', th.dataset.sort === this.sortField);
+      const a = th.querySelector('.sort-arrow');
+      if (a) a.textContent = th.dataset.sort === this.sortField ? (this.sortDir==='asc'?'↑':'↓') : '↕';
     });
-    const tbody=document.getElementById('bugsTableBody');
-    tbody.innerHTML=page.length===0
-      ?`<tr><td colspan="9"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucune mission.</p></div></td></tr>`
-      :page.map(b=>this.renderRow(b)).join('');
-    this.renderPagination(total,totalPages);
+    const tbody = document.getElementById('bugsTableBody');
+    tbody.innerHTML = this.bugs.length === 0
+      ? `<tr><td colspan="10"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucune mission.</p></div></td></tr>`
+      : this.bugs.map(b => this.renderRow(b)).join('');
+    this.renderPagination(total, totalPages);
   },
 
   renderRow(b) {
@@ -197,7 +215,7 @@ const Front = {
 
   renderPagination(total,totalPages) {
     const el=document.getElementById('pagination');
-    const s=(this.currentPage-1)*this.itemsPerPage+1,e=Math.min(this.currentPage*this.itemsPerPage,total);
+    const s=(this.currentPage-1)*this.perPage+1,e=Math.min(this.currentPage*this.perPage,total);
     let btns=`<button class="page-btn" onclick="Front.goPage(${this.currentPage-1})" ${this.currentPage===1?'disabled':''}>‹</button>`;
     for(let i=1;i<=totalPages;i++){
       if(totalPages>7&&Math.abs(i-this.currentPage)>2&&i!==1&&i!==totalPages){if(i===2||i===totalPages-1)btns+=`<span class="page-btn" style="cursor:default;border:none;opacity:.4">…</span>`;continue;}
@@ -207,7 +225,7 @@ const Front = {
     el.innerHTML=`<span class="pagination-info">Affichage ${total===0?0:s}–${e} sur ${total}</span><div class="pagination-controls">${btns}</div>`;
   },
 
-  goPage(p){const t=Math.max(1,Math.ceil(this.getFiltered().length/this.itemsPerPage));if(p<1||p>t)return;this.currentPage=p;this.renderList();window.scrollTo({top:0,behavior:'smooth'});},
+  goPage(p){const t=Math.max(1,Math.ceil(this.totalBugs/this.perPage));if(p<1||p>t)return;this.currentPage=p;this.renderList();window.scrollTo({top:0,behavior:'smooth'});},
 
   renderKanban() {
     const filtered=this.getFiltered(),board=document.getElementById('kanbanBoard');

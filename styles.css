@@ -1896,3 +1896,96 @@ body.light .kanban-card { background: var(--bg-raised); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ============================================
+   MODALES — scroll mobile
+   ============================================ */
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    max-height: 92vh;
+    width: 100%;
+    max-width: 100%;
+    animation: slideUpMobile 0.25s cubic-bezier(0.34,1.2,0.64,1);
+  }
+  @keyframes slideUpMobile {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .modal-body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .detail-modal { max-height: 88vh; }
+  .detail-body  { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .form-row { grid-template-columns: 1fr !important; }
+}
+
+/* ============================================
+   DASHBOARD — styles
+   ============================================ */
+.dash-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px) { .dash-kpi-row { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 500px) { .dash-kpi-row { grid-template-columns: repeat(2,1fr); } }
+
+.dash-kpi {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.dash-kpi:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.dash-kpi-value {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 36px; font-weight: 700;
+  color: var(--text-bright); line-height: 1; margin-bottom: 6px;
+}
+.dash-kpi-label {
+  font-size: 11px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600;
+}
+.dash-charts-row {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 16px; margin-bottom: 16px;
+}
+@media (max-width: 900px) { .dash-charts-row { grid-template-columns: 1fr; } }
+
+.dash-card {
+  background: var(--bg-surface); border: 1px solid var(--border-base);
+  border-radius: var(--r-lg); padding: 18px 20px;
+  position: relative; overflow: hidden;
+}
+.dash-card::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+.dash-card-title {
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;
+}
+.dash-donut-wrap { display: flex; align-items: center; gap: 16px; }
+.dash-legend { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.dash-legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-base); }
+.dash-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.dash-legend-key { flex: 1; }
+.dash-legend-val { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); }
+.dash-bars { display: flex; flex-direction: column; gap: 8px; }
+.dash-bar-row { display: flex; align-items: center; gap: 8px; }
+.dash-bar-label { font-size: 11px; color: var(--text-base); width: 80px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dash-bar-track { flex: 1; height: 8px; background: var(--bg-hover); border-radius: 4px; overflow: hidden; }
+.dash-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+.dash-bar-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); width: 24px; text-align: right; flex-shrink: 0; }
+.dash-timeline-legend { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.dash-empty { color: var(--text-faint); font-size: 12px; text-align: center; padding: 20px 0; }
