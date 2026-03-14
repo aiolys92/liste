@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi des Bugs – Dofus</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <span class="header-title"><span class="header-title-icon">⬡</span>Bug Tracker</span>
+    <nav class="header-nav">
+      <a href="index.html" class="active">Liste publique</a>
+      <a href="backoffice.html" class="btn-backoffice">⚙ Back-office</a>
+    </nav>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-container">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <h1>Rapports de bugs</h1>
+      <p>Liste des anomalies, régressions et demandes d'amélioration recensées par la communauté.</p>
+      <div class="stats-row" id="statsRow">
+        <!-- Générées via JS -->
+      </div>
+    </div>
+
+    <!-- FILTRES -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <span class="filter-label">Type</span>
+        <select class="filter-select" id="filterType">
+          <option value="">Tous</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Catégorie</span>
+        <select class="filter-select" id="filterCategory">
+          <option value="">Toutes</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Priorité</span>
+        <select class="filter-select" id="filterPriority">
+          <option value="">Toutes</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">État</span>
+        <select class="filter-select" id="filterState">
+          <option value="">Tous</option>
+        </select>
+      </div>
+      <div class="search-wrapper" style="margin-left: auto;">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Rechercher…">
+      </div>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bugs-table-wrapper">
+      <table class="bugs-table">
+        <thead>
+          <tr>
+            <th class="col-type" data-sort="type">Type <span class="sort-arrow">↕</span></th>
+            <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+            <th class="col-id" data-sort="id">ID <span class="sort-arrow">↕</span></th>
+            <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+            <th class="col-description">Description</th>
+            <th class="col-state" data-sort="state">État <span class="sort-arrow">↕</span></th>
+            <th class="col-date" data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="bugsTableBody">
+          <!-- Généré via JS -->
+        </tbody>
+      </table>
+
+      <!-- PAGINATION -->
+      <div class="pagination" id="pagination">
+        <!-- Généré via JS -->
+      </div>
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="front.js"></script>
+</body>
+</html>
