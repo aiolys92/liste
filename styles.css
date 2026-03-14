@@ -1696,3 +1696,114 @@ body.light .kanban-card { background: var(--bg-raised); }
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* ============================================
+   MODALE DÉTAIL MISSION
+   ============================================ */
+.detail-modal { max-width: 680px; }
+
+.detail-header-band {
+  position: relative;
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--border-base);
+}
+.detail-header-band::before {
+  content: '';
+  position: absolute; inset: 0 0 auto 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright), var(--gold-dim));
+  opacity: 0.6;
+}
+
+.detail-id-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-bright);
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+.detail-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.detail-body {
+  padding: 20px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.detail-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.detail-description {
+  font-size: 13px;
+  color: var(--text-base);
+  line-height: 1.7;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 500px) { .detail-grid { grid-template-columns: 1fr; } }
+
+.detail-field {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+}
+
+.detail-field-value {
+  font-size: 13px;
+  color: var(--text-bright);
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.detail-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.detail-footer {
+  padding: 14px 26px 20px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  background: var(--bg-raised);
+}
+
+/* Ligne cliquable */
+.bugs-table tbody tr.clickable-row { cursor: pointer; }

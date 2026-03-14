@@ -81,6 +81,7 @@ const Front = {
     document.getElementById('btnExportCSV')?.addEventListener('click',()=>this.exportCSV());
     document.getElementById('themeToggle')?.addEventListener('click',()=>this.toggleTheme());
     document.getElementById('commentsModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('commentsModal'))this.closeComments();});
+    document.getElementById('detailOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('detailOverlay'))this.closeDetail();});
   },
 
 
@@ -168,7 +169,7 @@ const Front = {
       :`<span class="avatar avatar-unassigned" title="Non assigné">·</span>`;
     const dueDateHtml=this.renderDueDate(b.due_date,b.state);
     const blocksHtml=b.blocks?.length?`<span class="block-tag" style="font-size:10px;padding:1px 5px;margin-left:4px;">🔗${b.blocks.length}</span>`:'';
-    return `<tr>
+    return `<tr class="clickable-row" onclick="Front.openDetail('${d(b.id)}')"
       <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
       <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
       <td class="col-id"><span class="bug-id">${d(b.id)}</span>${blocksHtml}</td>
@@ -178,7 +179,7 @@ const Front = {
       <td class="col-assignee">${avatarHtml}</td>
       <td class="col-due">${dueDateHtml}</td>
       <td class="col-date"><div class="date-main">${this.fmtDate(b.date)}</div></td>
-      <td class="col-comments"><button class="comments-btn" onclick="Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
+      <td class="col-comments"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
     </tr>`;
   },
 
@@ -456,6 +457,90 @@ const Front = {
       const wrap=document.getElementById('tlWrap');
       if(wrap) wrap.scrollLeft=Math.max(0, todayX-300);
     }, 50);
+  },
+
+
+  /* ---- DÉTAIL MISSION ---- */
+  openDetail(id) {
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    const d  = this.esc.bind(this);
+    const ts = this.toSlug;
+    const member = this.members.find(m => m.name === bug.assignee);
+    const avatarHtml = member
+      ? `<span class="avatar" style="background:${member.color};width:22px;height:22px;font-size:9px;">${d(member.initials)}</span> ${d(member.name)}`
+      : '<span style="color:var(--text-faint)">Non assigné</span>';
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    let dueDateHtml = '<span style="color:var(--text-faint)">—</span>';
+    if (bug.due_date) {
+      const diff = Math.ceil((new Date(bug.due_date) - today) / 864e5);
+      const done = bug.state === 'Résolu' || bug.state === 'Fermé';
+      const cls  = !done && diff < 0 ? 'color:var(--p-critical)' : !done && diff <= 3 ? 'color:var(--p-medium)' : 'color:var(--text-base)';
+      const icon = !done && diff < 0 ? '⚠ ' : !done && diff <= 3 ? '⏰ ' : '';
+      dueDateHtml = `<span style="${cls}">${icon}${this.fmtDate(bug.due_date)}</span>`;
+    }
+
+    const blocksHtml = bug.blocks?.length
+      ? bug.blocks.map(bid => {
+          const b2 = this.bugs.find(x => x.id === bid);
+          return `<span class="block-tag">${d(bid)}${b2 ? ' — ' + d(b2.title.slice(0,30)) : ''}</span>`;
+        }).join('')
+      : '<span style="color:var(--text-faint)">Aucune</span>';
+
+    document.getElementById('detailModal').innerHTML = `
+      <div class="modal detail-modal">
+        <div class="detail-header-band">
+          <div class="detail-id-row">
+            <span class="bug-id">${d(bug.id)}</span>
+            <span class="badge badge-type-${ts(bug.type)}"><span class="badge-dot"></span>${d(bug.type)}</span>
+            <span class="badge badge-cat-${ts(bug.category)}"><span class="badge-dot"></span>${d(bug.category)}</span>
+          </div>
+          <div class="detail-title">${d(bug.title)}</div>
+          <div class="detail-badges">
+            <span class="badge badge-prio-${ts(bug.priority)}"><span class="badge-dot"></span>${d(bug.priority)}</span>
+            <span class="badge badge-state-${ts(bug.state)}"><span class="badge-dot"></span>${d(bug.state)}</span>
+          </div>
+        </div>
+        <div class="detail-body">
+          <div>
+            <div class="detail-section-label">Description</div>
+            <div class="detail-description">${d(bug.description)}</div>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-field">
+              <div class="detail-section-label">Assigné à</div>
+              <div class="detail-field-value">${avatarHtml}</div>
+            </div>
+            <div class="detail-field">
+              <div class="detail-section-label">Date d'arrivée</div>
+              <div class="detail-field-value">${this.fmtDate(bug.date)}</div>
+            </div>
+            <div class="detail-field">
+              <div class="detail-section-label">Échéance</div>
+              <div class="detail-field-value">${dueDateHtml}</div>
+            </div>
+            <div class="detail-field">
+              <div class="detail-section-label">Priorité</div>
+              <div class="detail-field-value"><span class="badge badge-prio-${ts(bug.priority)}"><span class="badge-dot"></span>${d(bug.priority)}</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="detail-section-label">Missions bloquées</div>
+            <div class="detail-blocks">${blocksHtml}</div>
+          </div>
+        </div>
+        <div class="detail-footer">
+          <button class="btn btn-secondary" onclick="Front.closeDetail()">Fermer</button>
+          <button class="btn btn-primary" onclick="Front.closeDetail();Front.openComments('${d(bug.id)}')">💬 Commentaires</button>
+        </div>
+      </div>`;
+
+    document.getElementById('detailOverlay').classList.remove('hidden');
+  },
+
+  closeDetail() {
+    document.getElementById('detailOverlay').classList.add('hidden');
   },
 
   exportCSV(){

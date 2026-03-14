@@ -166,6 +166,7 @@ const BO = {
     document.getElementById('actionModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('actionModalOverlay'))this.closeActionModal();});
     document.getElementById('stateModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('stateModalOverlay'))this.closeStateModal();});
     document.getElementById('acceptModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('acceptModalOverlay'))this.closeAcceptModal();});
+    document.getElementById('detailOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('detailOverlay'))this.closeDetail();});
   },
 
   bindBulkEvents() {
@@ -256,8 +257,8 @@ const BO = {
     const dueDateHtml = this.renderDueDate(b.due_date, b.state);
     const blocksHtml  = b.blocks?.length ? `<span class="block-tag" style="font-size:10px;padding:1px 5px;">🔗 ${b.blocks.length}</span>` : '';
     const isChecked   = this.selected.has(b.id);
-    return `<tr class="${isChecked?'selected-row':''}">
-      <td class="col-select"><input type="checkbox" class="row-checkbox" data-id="${d(b.id)}" ${isChecked?'checked':''} onchange="BO.toggleSelect('${d(b.id)}',this.checked)"></td>
+    return `<tr class="${isChecked?'selected-row':''} clickable-row" onclick="BO.openDetail('${d(b.id)}')"
+      <td class="col-select"><input type="checkbox" class="row-checkbox" data-id="${d(b.id)}" ${isChecked?'checked':''} onchange="BO.toggleSelect('${d(b.id)}',this.checked)" onclick="event.stopPropagation()"></td>
       <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
       <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
       <td class="col-id"><span class="bug-id">${d(b.id)}</span>${blocksHtml}</td>
@@ -288,7 +289,7 @@ const BO = {
   renderStateDropdown(b) {
     const ts=this.toSlug,d=this.esc.bind(this);
     return `<span class="badge badge-state-${ts(b.state)} state-badge-btn"
-      onclick="BO.openStateModal('${d(b.id)}')"
+      onclick="event.stopPropagation();BO.openStateModal('${d(b.id)}')"
       title="Changer l'état"><span class="badge-dot"></span>${d(b.state)} ▾</span>`;
   },
 
@@ -1016,6 +1017,79 @@ const BO = {
       if (action === 'archive')  this.archiveMission(id);
       if (action === 'delete')   this.openDelete(id);
     }, 80);
+  },
+
+
+  // ============================================================
+  // DÉTAIL MISSION
+  // ============================================================
+  openDetail(id) {
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    const d  = this.esc.bind(this);
+    const ts = this.toSlug;
+    const member = this.members.find(m => m.name === bug.assignee);
+    const avatarHtml = member
+      ? '<span class="avatar" style="background:' + member.color + ';width:22px;height:22px;font-size:9px;">' + d(member.initials) + '</span> ' + d(member.name)
+      : '<span style="color:var(--text-faint)">Non assigné</span>';
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    let dueDateHtml = '<span style="color:var(--text-faint)">—</span>';
+    if (bug.due_date) {
+      const diff = Math.ceil((new Date(bug.due_date) - today) / 864e5);
+      const done = bug.state === 'Résolu' || bug.state === 'Fermé';
+      const cls  = !done && diff < 0 ? 'color:var(--p-critical)' : !done && diff <= 3 ? 'color:var(--p-medium)' : 'color:var(--text-base)';
+      const icon = !done && diff < 0 ? '⚠ ' : !done && diff <= 3 ? '⏰ ' : '';
+      dueDateHtml = '<span style="' + cls + '">' + icon + this.fmtDate(bug.due_date) + '</span>';
+    }
+
+    const blocksHtml = bug.blocks && bug.blocks.length
+      ? bug.blocks.map(bid => {
+          const b2 = this.bugs.find(x => x.id === bid);
+          return '<span class="block-tag">' + d(bid) + (b2 ? ' — ' + d(b2.title.slice(0,30)) : '') + '</span>';
+        }).join('')
+      : '<span style="color:var(--text-faint)">Aucune</span>';
+
+    document.getElementById('detailModal').innerHTML =
+      '<div class="modal detail-modal">' +
+        '<div class="detail-header-band">' +
+          '<div class="detail-id-row">' +
+            '<span class="bug-id">' + d(bug.id) + '</span>' +
+            '<span class="badge badge-type-' + ts(bug.type) + '"><span class="badge-dot"></span>' + d(bug.type) + '</span>' +
+            '<span class="badge badge-cat-' + ts(bug.category) + '"><span class="badge-dot"></span>' + d(bug.category) + '</span>' +
+          '</div>' +
+          '<div class="detail-title">' + d(bug.title) + '</div>' +
+          '<div class="detail-badges">' +
+            '<span class="badge badge-prio-' + ts(bug.priority) + '"><span class="badge-dot"></span>' + d(bug.priority) + '</span>' +
+            '<span class="badge badge-state-' + ts(bug.state) + '"><span class="badge-dot"></span>' + d(bug.state) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-body">' +
+          '<div>' +
+            '<div class="detail-section-label">Description</div>' +
+            '<div class="detail-description">' + d(bug.description) + '</div>' +
+          '</div>' +
+          '<div class="detail-grid">' +
+            '<div class="detail-field"><div class="detail-section-label">Assigné à</div><div class="detail-field-value">' + avatarHtml + '</div></div>' +
+            '<div class="detail-field"><div class="detail-section-label">Date arrivée</div><div class="detail-field-value">' + this.fmtDate(bug.date) + '</div></div>' +
+            '<div class="detail-field"><div class="detail-section-label">Échéance</div><div class="detail-field-value">' + dueDateHtml + '</div></div>' +
+            '<div class="detail-field"><div class="detail-section-label">Priorité</div><div class="detail-field-value"><span class="badge badge-prio-' + ts(bug.priority) + '"><span class="badge-dot"></span>' + d(bug.priority) + '</span></div></div>' +
+          '</div>' +
+          '<div><div class="detail-section-label">Missions bloquées</div><div class="detail-blocks">' + blocksHtml + '</div></div>' +
+        '</div>' +
+        '<div class="detail-footer">' +
+          '<button class="btn btn-secondary" onclick="BO.closeDetail()">Fermer</button>' +
+          '<button class="btn btn-secondary" onclick="BO.closeDetail();BO.openComments(\'' + d(bug.id) + '\')">💬 Commentaires</button>' +
+          '<button class="btn btn-secondary" onclick="BO.closeDetail();BO.openHistory(\'' + d(bug.id) + '\')">📋 Historique</button>' +
+          '<button class="btn btn-primary" onclick="BO.closeDetail();BO.openActionModal(\'' + d(bug.id) + '\')">⚡ Actions</button>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('detailOverlay').classList.remove('hidden');
+  },
+
+  closeDetail() {
+    document.getElementById('detailOverlay').classList.add('hidden');
   },
 
   logout(){sessionStorage.removeItem('bo_auth');window.location.href='login.html';},
