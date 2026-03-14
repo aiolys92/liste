@@ -1029,6 +1029,148 @@ const BO = {
   fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});},
   fmtDatetime(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});},
   esc(str){return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+  // ============================================================
+  // DEMANDES
+  // ============================================================
+  renderRequestsTab() {
+    this.updateReqBadge();
+    this.renderReqList();
+  },
+
+  updateReqBadge() {
+    const pending = this.requests.filter(r => r.status === 'pending').length;
+    const badge   = document.getElementById('reqBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending > 0 ? '' : 'none'; }
+    ['pending','accepted','rejected'].forEach(s => {
+      const key = s.charAt(0).toUpperCase() + s.slice(1);
+      const el  = document.getElementById('reqTabCount' + key);
+      if (el) el.textContent = '(' + this.requests.filter(r => r.status === s).length + ')';
+    });
+  },
+
+  switchReqTab(tab) {
+    this.currentReqTab = tab;
+    ['pending','accepted','rejected'].forEach(t => {
+      const key = t.charAt(0).toUpperCase() + t.slice(1);
+      document.getElementById('reqTab' + key)?.classList.toggle('tab-active', t === tab);
+    });
+    this.renderReqList();
+  },
+
+  renderReqList() {
+    const el = document.getElementById('reqAdminList');
+    if (!el) return;
+    const filtered = this.requests.filter(r => r.status === this.currentReqTab);
+
+    if (!filtered.length) {
+      const msgs = {
+        pending:  'Aucune demande en attente.',
+        accepted: 'Aucune demande acceptée.',
+        rejected: 'Aucune demande refusée.'
+      };
+      el.innerHTML = '<div class="empty-state"><span class="empty-icon">📥</span><p>' + msgs[this.currentReqTab] + '</p></div>';
+      return;
+    }
+
+    el.innerHTML = '<div class="bugs-table-wrapper">' + filtered.map(r => {
+      const d   = this.esc.bind(this);
+      const ts  = this.toSlug;
+      const actions = this.currentReqTab === 'pending'
+        ? '<div style="display:flex;gap:7px;flex-shrink:0;">' +
+            '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;" onclick="BO.openAcceptModal(' + r.id + ')">✅ Accepter</button>' +
+            '<button class="btn btn-danger"  style="font-size:12px;padding:6px 14px;" onclick="BO.rejectRequest(' + r.id + ')">✕ Refuser</button>' +
+          '</div>'
+        : '';
+      return '<div class="request-admin-item">' +
+        '<div class="request-admin-top">' +
+          '<div class="request-admin-info">' +
+            '<div class="request-admin-title">' + d(r.title) + '</div>' +
+            '<div class="request-admin-meta" style="margin-bottom:8px;">' +
+              '<span class="badge badge-type-' + ts(r.type) + '" style="font-size:10px;">' + d(r.type) + '</span>' +
+              '<span class="badge badge-cat-' + ts(r.category) + '" style="font-size:10px;">' + d(r.category) + '</span>' +
+              '<span style="font-size:11px;color:var(--text-muted);">👤 ' + d(r.author_name) + '</span>' +
+              '<span style="font-size:11px;color:var(--text-muted);">✉ ' + d(r.author_email) + '</span>' +
+              '<span style="font-size:11px;color:var(--text-faint);font-family:DM Mono,monospace;">' + this.fmtDatetime(r.created_at) + '</span>' +
+            '</div>' +
+          '</div>' +
+          actions +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--text-muted);line-height:1.6;padding:10px 12px;background:var(--bg-raised);border-radius:var(--r-md);border:1px solid var(--border-dim);">' +
+          d(r.description) +
+        '</div>' +
+      '</div>';
+    }).join('') + '</div>';
+  },
+
+  openAcceptModal(reqId) {
+    document.getElementById('acceptReqId').value = reqId;
+    const ps = document.getElementById('acceptPriority');
+    if (ps) {
+      ps.innerHTML = this.config.priorities.map(p => '<option value="' + this.esc(p) + '">' + this.esc(p) + '</option>').join('');
+      ps.value = 'Moyenne';
+    }
+    const ss = document.getElementById('acceptState');
+    if (ss) {
+      ss.innerHTML = this.config.states.map(s => '<option value="' + this.esc(s) + '">' + this.esc(s) + '</option>').join('');
+      ss.value = 'Nouveau';
+    }
+    const as = document.getElementById('acceptAssignee');
+    if (as) {
+      as.innerHTML = '<option value="">— Non assigné —</option>' +
+        this.members.map(m => '<option value="' + this.esc(m.name) + '">' + this.esc(m.name) + '</option>').join('');
+    }
+    const dd = document.getElementById('acceptDueDate');
+    if (dd) dd.value = '';
+    document.getElementById('acceptModalOverlay').classList.remove('hidden');
+  },
+
+  closeAcceptModal() {
+    document.getElementById('acceptModalOverlay').classList.add('hidden');
+  },
+
+  async confirmAccept() {
+    const reqId = parseInt(document.getElementById('acceptReqId').value);
+    const req   = this.requests.find(r => r.id === reqId);
+    if (!req) return;
+    const priority = document.getElementById('acceptPriority').value;
+    const state    = document.getElementById('acceptState').value;
+    const assignee = document.getElementById('acceptAssignee').value || null;
+    const dueDate  = document.getElementById('acceptDueDate').value   || null;
+    const btn = document.querySelector('#acceptModalOverlay .btn-primary');
+    btn.textContent = 'Création…'; btn.disabled = true;
+    try {
+      const newId  = DB.nextId(this.bugs);
+      const created = await DB.insertBug({
+        id: newId, type: req.type, category: req.category,
+        priority, state, title: req.title, description: req.description,
+        date: new Date().toISOString().slice(0, 10),
+        assignee, due_date: dueDate, archived: false
+      });
+      await DB.insertHistory(newId, 'Admin', 'création', '', 'Créée depuis une demande de ' + req.author_name);
+      await DB.updateRequest(reqId, { status: 'accepted' });
+      this.bugs.unshift(Array.isArray(created) ? created[0] : { id: newId, type: req.type, category: req.category, priority, state, title: req.title, description: req.description, date: new Date().toISOString().slice(0,10) });
+      this.requests = this.requests.map(r => r.id === reqId ? Object.assign({}, r, { status: 'accepted' }) : r);
+      this.closeAcceptModal();
+      this.renderStats();
+      this.renderReqList();
+      this.updateReqBadge();
+      this.showNotif('✓ Demande acceptée — Mission ' + newId + ' créée');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+    finally { btn.textContent = '✅ Créer la mission'; btn.disabled = false; }
+  },
+
+  async rejectRequest(reqId) {
+    if (!confirm('Refuser cette demande ?')) return;
+    try {
+      await DB.updateRequest(reqId, { status: 'rejected' });
+      this.requests = this.requests.map(r => r.id === reqId ? Object.assign({}, r, { status: 'rejected' }) : r);
+      this.renderReqList();
+      this.updateReqBadge();
+      this.showNotif('✓ Demande refusée');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  },
+
 };
 
 document.addEventListener('DOMContentLoaded',()=>BO.init());
