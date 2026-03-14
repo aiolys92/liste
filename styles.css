@@ -789,3 +789,120 @@ input[type="date"].form-input { color-scheme: dark; }
   opacity: 0.4;
   transform: scale(0.97);
 }
+
+/* ============================================
+   COMMENTAIRES
+   ============================================ */
+.comments-btn {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-base);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.comments-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  transform: scale(1.1);
+}
+
+.comment-form {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border-base);
+  background: var(--bg-raised);
+}
+
+.comment-item {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  animation: rowIn 0.2s ease both;
+}
+.comment-item:last-child { margin-bottom: 0; }
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+
+.comment-author {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--gold-mid);
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.comment-date {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: 'DM Mono', monospace;
+}
+
+.comment-delete {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+  transition: color 0.15s;
+}
+.comment-delete:hover { color: var(--p-critical); }
+
+.comment-content {
+  font-size: 13px;
+  color: var(--text-base);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comments-loading,
+.comments-empty,
+.comments-error {
+  text-align: center;
+  padding: 32px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.comments-error { color: var(--p-critical); }
+
+/* ============================================
+   ARCHIVAGE — badges & boutons
+   ============================================ */
+.action-btn.archive:hover {
+  color: var(--s-pending);
+  border-color: rgba(255,208,64,0.4);
+  background: rgba(255,208,64,0.08);
+}
+.action-btn.restore:hover {
+  color: var(--s-resolved);
+  border-color: rgba(112,208,96,0.4);
+  background: rgba(112,208,96,0.08);
+}
+
+.archived-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,208,64,0.08);
+  border: 1px solid rgba(255,208,64,0.2);
+  border-radius: var(--r-md);
+  color: var(--s-pending);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}

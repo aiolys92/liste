@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Post — Archives</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>
+    <nav class="header-nav">
+      <a href="index.html">Mission Board</a>
+      <a href="archives.html" class="active">Archives</a>
+      <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
+    </nav>
+  </header>
+
+  <main class="main-container">
+
+    <div class="page-header">
+      <h1>Archives</h1>
+      <p>Missions archivées — consultables mais non modifiables depuis cette vue.</p>
+      <div class="stats-row" id="statsRow"></div>
+    </div>
+
+    <div id="errorBanner" style="display:none;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:var(--r-md);color:var(--p-critical);padding:12px 18px;margin-bottom:16px;font-size:13px;"></div>
+
+    <div class="filters-bar">
+      <div class="search-wrapper" style="margin-left:0;">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Rechercher dans les archives…" style="width:280px;">
+      </div>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+
+    <div class="bugs-table-wrapper">
+      <table class="bugs-table">
+        <thead>
+          <tr>
+            <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
+            <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+            <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
+            <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+            <th class="col-description">Description</th>
+            <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
+            <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
+            <th class="col-comments"    style="width:54px;text-align:center;">💬</th>
+          </tr>
+        </thead>
+        <tbody id="bugsTableBody">
+          <tr id="loadingRow">
+            <td colspan="8" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px;"><span style="opacity:.5">Chargement…</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+  </main>
+
+  <!-- MODALE COMMENTAIRES (lecture seule) -->
+  <div class="modal-overlay hidden" id="commentsModal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="commentsModalTitle"></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:'DM Mono',monospace;" id="commentsBugId"></div>
+        </div>
+        <button class="modal-close" onclick="Archives.closeComments()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <div id="commentsList" style="max-height:400px;overflow-y:auto;padding:16px 24px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="supabase.js"></script>
+  <script>
+  const Archives = {
+    bugs: [],
+    search: '',
+    currentPage: 1,
+    itemsPerPage: 10,
+    sortField: 'date',
+    sortDir: 'desc',
+
+    async init() {
+      document.getElementById('loadingRow').style.display = '';
+      try {
+        this.bugs = await DB.fetchArchived();
+      } catch(e) {
+        document.getElementById('errorBanner').textContent = 'Erreur de chargement.';
+        document.getElementById('errorBanner').style.display = 'block';
+      }
+      document.getElementById('loadingRow').style.display = 'none';
+      document.getElementById('statsRow').innerHTML = `<div class="stat-chip"><strong>${this.bugs.length}</strong> mission${this.bugs.length>1?'s':''} archivée${this.bugs.length>1?'s':''}</div>`;
+      document.getElementById('searchInput').addEventListener('input', e => { this.search=e.target.value.toLowerCase(); this.currentPage=1; this.render(); });
+      document.querySelectorAll('[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+          const f=th.dataset.sort;
+          if(this.sortField===f)this.sortDir=this.sortDir==='asc'?'desc':'asc';
+          else{this.sortField=f;this.sortDir='asc';}
+          this.render();
+        });
+      });
+      this.render();
+    },
+
+    getFiltered() {
+      if (!this.search) return this.bugs;
+      return this.bugs.filter(b =>
+        b.title?.toLowerCase().includes(this.search) ||
+        b.description?.toLowerCase().includes(this.search) ||
+        b.id?.toLowerCase().includes(this.search)
+      );
+    },
+
+    getSorted(list) {
+      const po={'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
+      return [...list].sort((a,b)=>{
+        let va=a[this.sortField],vb=b[this.sortField];
+        if(this.sortField==='priority'){va=po[va]??99;vb=po[vb]??99;}
+        if(va<vb)return this.sortDir==='asc'?-1:1;
+        if(va>vb)return this.sortDir==='asc'?1:-1;
+        return 0;
+      });
+    },
+
+    render() {
+      const filtered=this.getSorted(this.getFiltered());
+      const total=filtered.length;
+      const totalPages=Math.max(1,Math.ceil(total/this.itemsPerPage));
+      this.currentPage=Math.min(this.currentPage,totalPages);
+      const start=(this.currentPage-1)*this.itemsPerPage;
+      const page=filtered.slice(start,start+this.itemsPerPage);
+      document.getElementById('filterCount').textContent=`${total} résultat${total>1?'s':''}`;
+      document.querySelectorAll('[data-sort]').forEach(th=>{
+        th.classList.toggle('sorted',th.dataset.sort===this.sortField);
+        const arrow=th.querySelector('.sort-arrow');
+        if(arrow)arrow.textContent=th.dataset.sort===this.sortField?(this.sortDir==='asc'?'↑':'↓'):'↕';
+      });
+      const tbody=document.getElementById('bugsTableBody');
+      tbody.innerHTML=page.length===0
+        ?`<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">📦</span><p>Aucune mission archivée ne correspond à la recherche.</p></div></td></tr>`
+        :page.map(b=>this.renderRow(b)).join('');
+      this.renderPagination(total,totalPages);
+    },
+
+    renderRow(b) {
+      const ts=this.toSlug,d=this.esc.bind(this);
+      return `<tr style="opacity:.75;">
+        <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
+        <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
+        <td class="col-id"><span class="bug-id">${d(b.id)}</span></td>
+        <td class="col-priority"><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
+        <td class="col-description"><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
+        <td class="col-state"><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
+        <td class="col-date"><div class="bug-date"><div class="date-main">${this.fmtDate(b.date)}</div></div></td>
+        <td class="col-comments" style="text-align:center;">
+          <button class="comments-btn" onclick="Archives.openComments('${d(b.id)}')" title="Commentaires">💬</button>
+        </td>
+      </tr>`;
+    },
+
+    renderPagination(total,totalPages) {
+      const el=document.getElementById('pagination');
+      const s=(this.currentPage-1)*this.itemsPerPage+1;
+      const e=Math.min(this.currentPage*this.itemsPerPage,total);
+      let btns=`<button class="page-btn" onclick="Archives.goPage(${this.currentPage-1})" ${this.currentPage===1?'disabled':''}>‹</button>`;
+      for(let i=1;i<=totalPages;i++){
+        if(totalPages>7&&Math.abs(i-this.currentPage)>2&&i!==1&&i!==totalPages){
+          if(i===2||i===totalPages-1)btns+=`<span class="page-btn" style="cursor:default;border:none;opacity:.4">…</span>`;
+          continue;
+        }
+        btns+=`<button class="page-btn ${i===this.currentPage?'active':''}" onclick="Archives.goPage(${i})">${i}</button>`;
+      }
+      btns+=`<button class="page-btn" onclick="Archives.goPage(${this.currentPage+1})" ${this.currentPage===totalPages?'disabled':''}>›</button>`;
+      el.innerHTML=`<span class="pagination-info">Affichage ${total===0?0:s}–${e} sur ${total}</span><div class="pagination-controls">${btns}</div>`;
+    },
+
+    goPage(p) {
+      const t=Math.max(1,Math.ceil(this.getFiltered().length/this.itemsPerPage));
+      if(p<1||p>t)return;
+      this.currentPage=p; this.render();
+      window.scrollTo({top:0,behavior:'smooth'});
+    },
+
+    async openComments(bugId) {
+      const bug=this.bugs.find(b=>b.id===bugId); if(!bug)return;
+      document.getElementById('commentsModalTitle').textContent=bug.title;
+      document.getElementById('commentsBugId').textContent=bugId;
+      document.getElementById('commentsList').innerHTML=`<div class="comments-loading">Chargement…</div>`;
+      document.getElementById('commentsModal').classList.remove('hidden');
+      try {
+        const comments=await DB.fetchComments(bugId);
+        const el=document.getElementById('commentsList');
+        if(!comments.length){el.innerHTML=`<div class="comments-empty">Aucun commentaire.</div>`;return;}
+        el.innerHTML=comments.map(c=>`
+          <div class="comment-item">
+            <div class="comment-header">
+              <span class="comment-author">${this.esc(c.author)}</span>
+              <span class="comment-date">${this.fmtDatetime(c.created_at)}</span>
+            </div>
+            <div class="comment-content">${this.esc(c.content)}</div>
+          </div>`).join('');
+      } catch(e) { document.getElementById('commentsList').innerHTML=`<div class="comments-error">Erreur.</div>`; }
+    },
+
+    closeComments() { document.getElementById('commentsModal').classList.add('hidden'); },
+    toSlug(str) { return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); },
+    fmtDate(d)  { if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); },
+    fmtDatetime(d) { if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); },
+    esc(str)    { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  };
+  document.addEventListener('DOMContentLoaded',()=>Archives.init());
+  </script>
+</body>
+</html>

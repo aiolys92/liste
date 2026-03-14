@@ -1,6 +1,3 @@
-// ============================================
-// SUPABASE CONFIG
-// ============================================
 const SUPABASE_URL   = 'https://pmrmeivebuvyynmehyhh.supabase.co';
 const SUPABASE_ANON  = 'sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-';
 const SUPABASE_HEADERS = {
@@ -12,14 +9,24 @@ const SUPABASE_HEADERS = {
 
 const DB = {
 
-  // ============ BUGS ============
+  /* ---- BUGS ---- */
+  async fetchBugs(includeArchived = false) {
+    const filter = includeArchived ? '' : '&archived=eq.false&archived=is.null';
+    // On utilise 'or' pour attraper false ET null
+    const url = includeArchived
+      ? `${SUPABASE_URL}/rest/v1/bugs?order=date.desc,id.desc`
+      : `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&order=date.desc,id.desc`;
+    const res = await fetch(url, { headers: SUPABASE_HEADERS });
+    if (!res.ok) throw new Error(`Fetch error ${res.status}`);
+    return res.json();
+  },
 
-  async fetchBugs() {
+  async fetchArchived() {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/bugs?order=date.desc,id.desc`,
+      `${SUPABASE_URL}/rest/v1/bugs?archived=eq.true&order=date.desc,id.desc`,
       { headers: SUPABASE_HEADERS }
     );
-    if (!res.ok) throw new Error(`Fetch error ${res.status}`);
+    if (!res.ok) throw new Error(`Fetch archived error ${res.status}`);
     return res.json();
   },
 
@@ -39,6 +46,14 @@ const DB = {
     return res.json();
   },
 
+  async archiveBug(id) {
+    return this.updateBug(id, { archived: true });
+  },
+
+  async restoreBug(id) {
+    return this.updateBug(id, { archived: false });
+  },
+
   async deleteBug(id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?id=eq.${encodeURIComponent(id)}`, {
       method: 'DELETE', headers: SUPABASE_HEADERS
@@ -47,16 +62,38 @@ const DB = {
     return true;
   },
 
-  // ============ CONFIG ============
-
-  async fetchConfig() {
+  /* ---- COMMENTS ---- */
+  async fetchComments(bugId) {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/config`,
+      `${SUPABASE_URL}/rest/v1/comments?bug_id=eq.${encodeURIComponent(bugId)}&order=created_at.asc`,
       { headers: SUPABASE_HEADERS }
     );
+    if (!res.ok) throw new Error(`Comments fetch error ${res.status}`);
+    return res.json();
+  },
+
+  async insertComment(bugId, author, content) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
+      method: 'POST', headers: SUPABASE_HEADERS,
+      body: JSON.stringify({ bug_id: bugId, author, content })
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Comment insert error ${res.status}`); }
+    return res.json();
+  },
+
+  async deleteComment(id) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${id}`, {
+      method: 'DELETE', headers: SUPABASE_HEADERS
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Comment delete error ${res.status}`); }
+    return true;
+  },
+
+  /* ---- CONFIG ---- */
+  async fetchConfig() {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/config`, { headers: SUPABASE_HEADERS });
     if (!res.ok) throw new Error(`Config fetch error ${res.status}`);
     const rows = await res.json();
-    // Convertit [{key:'types', values:[...]}, ...] en {types:[...], categories:[...]}
     const out = {};
     rows.forEach(r => { out[r.key] = r.values; });
     return out;
@@ -64,16 +101,13 @@ const DB = {
 
   async updateConfig(key, values) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/config?key=eq.${key}`, {
-      method: 'PATCH',
-      headers: SUPABASE_HEADERS,
-      body: JSON.stringify({ values })
+      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify({ values })
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Config update error ${res.status}`); }
     return true;
   },
 
-  // ============ UTILS ============
-
+  /* ---- UTILS ---- */
   nextId(bugs) {
     if (!bugs.length) return 'DFS-10843';
     const max = Math.max(...bugs.map(b => parseInt(b.id.replace('DFS-','')) || 0));

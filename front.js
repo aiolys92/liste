@@ -1,7 +1,6 @@
 // ============================================
-// FRONT — Liste + Kanban | Supabase
+// FRONT — Liste + Kanban + Commentaires + Export CSV
 // ============================================
-
 const Front = {
   bugs: [],
   config: {
@@ -10,7 +9,7 @@ const Front = {
     priorities: ['Critique','Haute','Moyenne','Basse','Mineure'],
     states:     ['Nouveau','En cours','Résolu','Fermé','Rejeté','En attente']
   },
-  view: 'list', // 'list' | 'kanban'
+  view: 'list',
   currentPage: 1,
   itemsPerPage: 10,
   sortField: 'date',
@@ -24,9 +23,7 @@ const Front = {
       this.bugs = bugs;
       if (cfg.types)      this.config.types      = cfg.types;
       if (cfg.categories) this.config.categories = cfg.categories;
-    } catch(e) {
-      this.showError('Impossible de charger les données.');
-    }
+    } catch(e) { this.showError('Impossible de charger les données.'); }
     this.showLoading(false);
     this.populateFilters();
     this.bindEvents();
@@ -34,71 +31,59 @@ const Front = {
     this.render();
   },
 
-  showLoading(on) {
-    const el = document.getElementById('loadingRow');
-    if (el) el.style.display = on ? '' : 'none';
-  },
-
-  showError(msg) {
-    const el = document.getElementById('errorBanner');
-    if (el) { el.textContent = msg; el.style.display = 'block'; }
-  },
+  showLoading(on) { const el=document.getElementById('loadingRow'); if(el) el.style.display=on?'':'none'; },
+  showError(msg)  { const el=document.getElementById('errorBanner'); if(el){el.textContent=msg;el.style.display='block';} },
 
   populateFilters() {
-    const sel = (id, arr, allLabel='Tous') => {
-      const el = document.getElementById(id); if (!el) return;
-      el.innerHTML = `<option value="">${allLabel}</option>`;
-      arr.forEach(v => { const o = document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+    const sel=(id,arr,all='Tous')=>{
+      const el=document.getElementById(id); if(!el)return;
+      el.innerHTML=`<option value="">${all}</option>`;
+      arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});
     };
-    sel('filterType',     this.config.types);
-    sel('filterPriority', this.config.priorities);
-    sel('filterState',    this.config.states);
+    sel('filterType',this.config.types);
+    sel('filterPriority',this.config.priorities);
+    sel('filterState',this.config.states);
   },
 
   bindEvents() {
-    ['filterType','filterPriority','filterState'].forEach(id => {
-      const el = document.getElementById(id); if (!el) return;
-      el.addEventListener('change', (e) => {
-        const map = { filterType:'type', filterPriority:'priority', filterState:'state' };
-        this.filters[map[id]] = e.target.value;
-        this.currentPage = 1; this.render();
+    ['filterType','filterPriority','filterState'].forEach(id=>{
+      document.getElementById(id)?.addEventListener('change',e=>{
+        const map={filterType:'type',filterPriority:'priority',filterState:'state'};
+        this.filters[map[id]]=e.target.value; this.currentPage=1; this.render();
       });
     });
-    document.getElementById('searchInput')?.addEventListener('input', (e) => {
-      this.filters.search = e.target.value.toLowerCase();
-      this.currentPage = 1; this.render();
+    document.getElementById('searchInput')?.addEventListener('input',e=>{
+      this.filters.search=e.target.value.toLowerCase(); this.currentPage=1; this.render();
     });
-    document.querySelectorAll('[data-sort]').forEach(th => {
-      th.addEventListener('click', () => {
-        const f = th.dataset.sort;
-        if (this.sortField===f) this.sortDir = this.sortDir==='asc'?'desc':'asc';
-        else { this.sortField=f; this.sortDir='asc'; }
+    document.querySelectorAll('[data-sort]').forEach(th=>{
+      th.addEventListener('click',()=>{
+        const f=th.dataset.sort;
+        if(this.sortField===f) this.sortDir=this.sortDir==='asc'?'desc':'asc';
+        else{this.sortField=f;this.sortDir='asc';}
         this.render();
       });
     });
-    document.getElementById('btnViewList')?.addEventListener('click',   () => this.switchView('list'));
-    document.getElementById('btnViewKanban')?.addEventListener('click', () => this.switchView('kanban'));
+    document.getElementById('btnViewList')?.addEventListener('click',  ()=>this.switchView('list'));
+    document.getElementById('btnViewKanban')?.addEventListener('click',()=>this.switchView('kanban'));
+    document.getElementById('btnExportCSV')?.addEventListener('click', ()=>this.exportCSV());
   },
 
   switchView(v) {
-    this.view = v;
-    document.getElementById('btnViewList').classList.toggle('view-btn-active',   v==='list');
-    document.getElementById('btnViewKanban').classList.toggle('view-btn-active', v==='kanban');
-    document.getElementById('panelList').style.display   = v==='list'   ? '' : 'none';
-    document.getElementById('panelKanban').style.display = v==='kanban' ? '' : 'none';
-    // Masquer le filtre catégorie en kanban (les colonnes = catégories)
-    const cfRow = document.getElementById('filterCategoryGroup');
-    if (cfRow) cfRow.style.display = v==='kanban' ? 'none' : '';
-    if (v==='kanban') this.renderKanban();
+    this.view=v;
+    document.getElementById('btnViewList').classList.toggle('view-btn-active',  v==='list');
+    document.getElementById('btnViewKanban').classList.toggle('view-btn-active',v==='kanban');
+    document.getElementById('panelList').style.display   =v==='list'  ?'':'none';
+    document.getElementById('panelKanban').style.display =v==='kanban'?'':'none';
+    if(v==='kanban') this.renderKanban();
   },
 
   renderStats() {
-    const total    = this.bugs.length;
-    const critical = this.bugs.filter(b=>b.priority==='Critique').length;
-    const progress = this.bugs.filter(b=>b.state==='En cours').length;
-    const resolved = this.bugs.filter(b=>b.state==='Résolu').length;
-    document.getElementById('statsRow').innerHTML = `
-      <div class="stat-chip"><strong>${total}</strong> rapports</div>
+    const total=this.bugs.length;
+    const critical=this.bugs.filter(b=>b.priority==='Critique').length;
+    const progress=this.bugs.filter(b=>b.state==='En cours').length;
+    const resolved=this.bugs.filter(b=>b.state==='Résolu').length;
+    document.getElementById('statsRow').innerHTML=`
+      <div class="stat-chip"><strong>${total}</strong> missions</div>
       <div class="stat-chip" style="color:var(--p-critical)"><span class="stat-chip-dot"></span><strong>${critical}</strong> critiques</div>
       <div class="stat-chip" style="color:var(--s-progress)"><span class="stat-chip-dot"></span><strong>${progress}</strong> en cours</div>
       <div class="stat-chip" style="color:var(--s-resolved)"><span class="stat-chip-dot"></span><strong>${resolved}</strong> résolus</div>
@@ -106,61 +91,57 @@ const Front = {
   },
 
   getFiltered() {
-    return this.bugs.filter(b => {
-      if (this.filters.type     && b.type     !== this.filters.type)     return false;
-      if (this.filters.priority && b.priority !== this.filters.priority) return false;
-      if (this.filters.state    && b.state    !== this.filters.state)    return false;
-      if (this.filters.search) {
-        const s = this.filters.search;
-        if (!b.title?.toLowerCase().includes(s) && !b.description?.toLowerCase().includes(s) && !b.id?.toLowerCase().includes(s)) return false;
+    return this.bugs.filter(b=>{
+      if(this.filters.type     && b.type    !==this.filters.type)    return false;
+      if(this.filters.priority && b.priority!==this.filters.priority)return false;
+      if(this.filters.state    && b.state   !==this.filters.state)   return false;
+      if(this.filters.search){
+        const s=this.filters.search;
+        if(!b.title?.toLowerCase().includes(s)&&!b.description?.toLowerCase().includes(s)&&!b.id?.toLowerCase().includes(s))return false;
       }
       return true;
     });
   },
 
   getSorted(list) {
-    const po = {'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
+    const po={'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
     return [...list].sort((a,b)=>{
-      let va=a[this.sortField], vb=b[this.sortField];
-      if (this.sortField==='priority'){va=po[va]??99;vb=po[vb]??99;}
-      if (va<vb) return this.sortDir==='asc'?-1:1;
-      if (va>vb) return this.sortDir==='asc'?1:-1;
+      let va=a[this.sortField],vb=b[this.sortField];
+      if(this.sortField==='priority'){va=po[va]??99;vb=po[vb]??99;}
+      if(va<vb)return this.sortDir==='asc'?-1:1;
+      if(va>vb)return this.sortDir==='asc'?1:-1;
       return 0;
     });
   },
 
   render() {
-    if (this.view==='list')   this.renderList();
-    if (this.view==='kanban') this.renderKanban();
+    if(this.view==='list')   this.renderList();
+    if(this.view==='kanban') this.renderKanban();
   },
 
-  // ============================================================
-  // VUE LISTE
-  // ============================================================
+  /* ---- LISTE ---- */
   renderList() {
-    const filtered   = this.getSorted(this.getFiltered());
-    const total      = filtered.length;
-    const totalPages = Math.max(1, Math.ceil(total/this.itemsPerPage));
-    this.currentPage = Math.min(this.currentPage, totalPages);
-    const start = (this.currentPage-1)*this.itemsPerPage;
-    const page  = filtered.slice(start, start+this.itemsPerPage);
-
-    document.getElementById('filterCount').textContent = `${total} résultat${total>1?'s':''}`;
-    document.querySelectorAll('[data-sort]').forEach(th => {
-      th.classList.toggle('sorted', th.dataset.sort===this.sortField);
-      const arrow = th.querySelector('.sort-arrow');
-      if (arrow) arrow.textContent = th.dataset.sort===this.sortField?(this.sortDir==='asc'?'↑':'↓'):'↕';
+    const filtered=this.getSorted(this.getFiltered());
+    const total=filtered.length;
+    const totalPages=Math.max(1,Math.ceil(total/this.itemsPerPage));
+    this.currentPage=Math.min(this.currentPage,totalPages);
+    const start=(this.currentPage-1)*this.itemsPerPage;
+    const page=filtered.slice(start,start+this.itemsPerPage);
+    document.getElementById('filterCount').textContent=`${total} résultat${total>1?'s':''}`;
+    document.querySelectorAll('[data-sort]').forEach(th=>{
+      th.classList.toggle('sorted',th.dataset.sort===this.sortField);
+      const arrow=th.querySelector('.sort-arrow');
+      if(arrow)arrow.textContent=th.dataset.sort===this.sortField?(this.sortDir==='asc'?'↑':'↓'):'↕';
     });
-
-    const tbody = document.getElementById('bugsTableBody');
-    tbody.innerHTML = page.length===0
-      ? `<tr><td colspan="7"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucun bug ne correspond aux filtres.</p></div></td></tr>`
-      : page.map(b=>this.renderRow(b)).join('');
-    this.renderPagination(total, totalPages);
+    const tbody=document.getElementById('bugsTableBody');
+    tbody.innerHTML=page.length===0
+      ?`<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucune mission ne correspond aux filtres.</p></div></td></tr>`
+      :page.map(b=>this.renderRow(b)).join('');
+    this.renderPagination(total,totalPages);
   },
 
   renderRow(b) {
-    const ts=this.toSlug, d=this.esc.bind(this);
+    const ts=this.toSlug,d=this.esc.bind(this);
     return `<tr>
       <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
       <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
@@ -169,10 +150,15 @@ const Front = {
       <td class="col-description"><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
       <td class="col-state"><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
       <td class="col-date"><div class="bug-date"><div class="date-main">${this.fmtDate(b.date)}</div></div></td>
+      <td class="col-comments">
+        <button class="comments-btn" onclick="Front.openComments('${d(b.id)}')" title="Voir les commentaires">
+          💬
+        </button>
+      </td>
     </tr>`;
   },
 
-  renderPagination(total, totalPages) {
+  renderPagination(total,totalPages) {
     const el=document.getElementById('pagination');
     const s=(this.currentPage-1)*this.itemsPerPage+1;
     const e=Math.min(this.currentPage*this.itemsPerPage,total);
@@ -195,85 +181,137 @@ const Front = {
     window.scrollTo({top:0,behavior:'smooth'});
   },
 
-  // ============================================================
-  // VUE KANBAN
-  // ============================================================
+  /* ---- KANBAN ---- */
   renderKanban() {
-    const filtered = this.getFiltered();
-    const board    = document.getElementById('kanbanBoard');
-
-    // Grouper par catégorie (dans l'ordre config)
-    const cols = {};
-    this.config.categories.forEach(cat => { cols[cat] = []; });
-    filtered.forEach(b => {
-      if (cols[b.category]) cols[b.category].push(b);
-      else cols[b.category] = [b]; // catégorie inconnue
-    });
-
-    board.innerHTML = this.config.categories.map(cat => {
-      const bugs = cols[cat] || [];
-      // Trier par priorité dans chaque colonne
-      const po = {'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
+    const filtered=this.getFiltered();
+    const board=document.getElementById('kanbanBoard');
+    const cols={};
+    this.config.categories.forEach(cat=>{cols[cat]=[];});
+    filtered.forEach(b=>{ if(cols[b.category])cols[b.category].push(b); else cols[b.category]=[b]; });
+    board.innerHTML=this.config.categories.map(cat=>{
+      const bugs=cols[cat]||[];
+      const po={'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
       bugs.sort((a,b)=>(po[a.priority]??99)-(po[b.priority]??99));
-      return this.renderKanbanCol(cat, bugs);
+      return this.renderKanbanCol(cat,bugs);
     }).join('');
   },
 
-  renderKanbanCol(cat, bugs) {
-    const ts = this.toSlug;
-    const critCount = bugs.filter(b=>b.priority==='Critique').length;
-    const critBadge = critCount > 0
-      ? `<span class="kanban-col-alert" title="${critCount} critique${critCount>1?'s':''}">${critCount} ⚠</span>`
-      : '';
-
-    return `
-      <div class="kanban-col">
-        <div class="kanban-col-header">
-          <div class="kanban-col-title-row">
-            <span class="badge badge-cat-${ts(cat)} kanban-col-badge"><span class="badge-dot"></span>${this.esc(cat)}</span>
-            ${critBadge}
-          </div>
-          <span class="kanban-col-count">${bugs.length}</span>
+  renderKanbanCol(cat,bugs) {
+    const ts=this.toSlug;
+    const critCount=bugs.filter(b=>b.priority==='Critique').length;
+    const critBadge=critCount>0?`<span class="kanban-col-alert">${critCount} ⚠</span>`:'';
+    return `<div class="kanban-col">
+      <div class="kanban-col-header">
+        <div class="kanban-col-title-row">
+          <span class="badge badge-cat-${ts(cat)} kanban-col-badge"><span class="badge-dot"></span>${this.esc(cat)}</span>
+          ${critBadge}
         </div>
-        <div class="kanban-cards">
-          ${bugs.length === 0
-            ? `<div class="kanban-empty">Aucun bug</div>`
-            : bugs.map(b => this.renderKanbanCard(b)).join('')
-          }
-        </div>
-      </div>`;
+        <span class="kanban-col-count">${bugs.length}</span>
+      </div>
+      <div class="kanban-cards">
+        ${bugs.length===0?`<div class="kanban-empty">Aucune mission</div>`:bugs.map(b=>this.renderKanbanCard(b)).join('')}
+      </div>
+    </div>`;
   },
 
   renderKanbanCard(b) {
-    const ts=this.toSlug, d=this.esc.bind(this);
-    return `
-      <div class="kanban-card kanban-card-prio-${ts(b.priority)}">
-        <div class="kanban-card-top">
-          <span class="kanban-card-id">${d(b.id)}</span>
-          <span class="badge badge-prio-${ts(b.priority)} kanban-card-prio-badge"><span class="badge-dot"></span>${d(b.priority)}</span>
-        </div>
-        <div class="kanban-card-title">${d(b.title)}</div>
-        <div class="kanban-card-desc">${d(b.description)}</div>
-        <div class="kanban-card-footer">
-          <span class="badge badge-state-${ts(b.state)} kanban-card-state"><span class="badge-dot"></span>${d(b.state)}</span>
-          <span class="kanban-card-date">${this.fmtDate(b.date)}</span>
-        </div>
-      </div>`;
+    const ts=this.toSlug,d=this.esc.bind(this);
+    return `<div class="kanban-card kanban-card-prio-${ts(b.priority)}">
+      <div class="kanban-card-top">
+        <span class="kanban-card-id">${d(b.id)}</span>
+        <span class="badge badge-prio-${ts(b.priority)} kanban-card-prio-badge"><span class="badge-dot"></span>${d(b.priority)}</span>
+      </div>
+      <div class="kanban-card-title">${d(b.title)}</div>
+      <div class="kanban-card-desc">${d(b.description)}</div>
+      <div class="kanban-card-footer">
+        <span class="badge badge-state-${ts(b.state)} kanban-card-state"><span class="badge-dot"></span>${d(b.state)}</span>
+        <button class="comments-btn" onclick="Front.openComments('${d(b.id)}')" style="font-size:12px;padding:2px 6px;">💬</button>
+        <span class="kanban-card-date">${this.fmtDate(b.date)}</span>
+      </div>
+    </div>`;
   },
 
-  // ============================================================
-  // UTILS
-  // ============================================================
-  toSlug(str) {
-    return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+  /* ---- COMMENTAIRES ---- */
+  async openComments(bugId) {
+    const bug = this.bugs.find(b=>b.id===bugId);
+    if (!bug) return;
+    const modal = document.getElementById('commentsModal');
+    document.getElementById('commentsModalTitle').textContent = bug.title;
+    document.getElementById('commentsBugId').textContent      = bugId;
+    document.getElementById('commentsList').innerHTML = `<div class="comments-loading">Chargement…</div>`;
+    document.getElementById('commentAuthor').value  = '';
+    document.getElementById('commentContent').value = '';
+    modal.classList.remove('hidden');
+    try {
+      const comments = await DB.fetchComments(bugId);
+      this.renderComments(comments, false);
+    } catch(e) {
+      document.getElementById('commentsList').innerHTML = `<div class="comments-error">Erreur de chargement.</div>`;
+    }
   },
-  fmtDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  renderComments(comments, canDelete) {
+    const el = document.getElementById('commentsList');
+    if (!comments.length) {
+      el.innerHTML = `<div class="comments-empty">Aucun commentaire pour l'instant. Soyez le premier !</div>`;
+      return;
+    }
+    el.innerHTML = comments.map(c => `
+      <div class="comment-item" id="comment-${c.id}">
+        <div class="comment-header">
+          <span class="comment-author">${this.esc(c.author)}</span>
+          <span class="comment-date">${this.fmtDatetime(c.created_at)}</span>
+          ${canDelete ? `<button class="comment-delete" onclick="Front.deleteComment(${c.id})">×</button>` : ''}
+        </div>
+        <div class="comment-content">${this.esc(c.content)}</div>
+      </div>
+    `).join('');
   },
-  esc(str) {
-    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
+
+  closeComments() {
+    document.getElementById('commentsModal').classList.add('hidden');
+  },
+
+  async submitComment() {
+    const bugId   = document.getElementById('commentsBugId').textContent;
+    const author  = document.getElementById('commentAuthor').value.trim();
+    const content = document.getElementById('commentContent').value.trim();
+    if (!author || !content) { alert('Merci de remplir votre nom et votre commentaire.'); return; }
+    const btn = document.getElementById('btnSubmitComment');
+    btn.textContent = 'Envoi…'; btn.disabled = true;
+    try {
+      await DB.insertComment(bugId, author, content);
+      document.getElementById('commentAuthor').value  = '';
+      document.getElementById('commentContent').value = '';
+      const comments = await DB.fetchComments(bugId);
+      this.renderComments(comments, false);
+    } catch(e) { alert('Erreur : ' + e.message); }
+    finally { btn.textContent = 'Publier'; btn.disabled = false; }
+  },
+
+  /* ---- EXPORT CSV ---- */
+  exportCSV() {
+    const data = this.getSorted(this.getFiltered());
+    const headers = ['ID','Type','Catégorie','Priorité','Titre','Description','État','Date'];
+    const escape  = v => `"${String(v||'').replace(/"/g,'""')}"`;
+    const rows    = data.map(b=>[b.id,b.type,b.category,b.priority,b.title,b.description,b.state,b.date].map(escape).join(','));
+    const csv     = [headers.join(','), ...rows].join('\n');
+    const blob    = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+    const url     = URL.createObjectURL(blob);
+    const a       = document.createElement('a');
+    a.href=url; a.download=`command-post-missions-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  },
+
+  /* ---- UTILS ---- */
+  toSlug(str) { return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); },
+  fmtDate(d)  { if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); },
+  fmtDatetime(d) {
+    if(!d)return'—';
+    return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  },
+  esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 };
 
-document.addEventListener('DOMContentLoaded', ()=>Front.init());
+document.addEventListener('DOMContentLoaded',()=>Front.init());

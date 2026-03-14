@@ -424,3 +424,89 @@ const BO = {
 };
 
 document.addEventListener('DOMContentLoaded', () => BO.init());
+
+// ---- ARCHIVAGE ----
+BO.archiveMission = async function(id) {
+  if (!confirm(`Archiver la mission [${id}] ?\nElle ne sera plus visible sur le Mission Board.`)) return;
+  try {
+    await DB.archiveBug(id);
+    this.bugs = this.bugs.filter(b => b.id !== id);
+    this.renderStats(); this.render();
+    this.showNotif(`✓ Mission ${id} archivée`);
+  } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+};
+
+// ---- COMMENTAIRES BACK-OFFICE ----
+BO.openComments = async function(bugId) {
+  const bug = this.bugs.find(b => b.id === bugId); if (!bug) return;
+  document.getElementById('commentsModalTitle').textContent = bug.title;
+  document.getElementById('commentsBugId').textContent = bugId;
+  document.getElementById('commentsList').innerHTML = '<div class="comments-loading">Chargement…</div>';
+  document.getElementById('commentsModal').classList.remove('hidden');
+  try {
+    const comments = await DB.fetchComments(bugId);
+    this._renderComments(comments, true);
+  } catch(e) { document.getElementById('commentsList').innerHTML = '<div class="comments-error">Erreur.</div>'; }
+};
+
+BO._renderComments = function(comments, canDelete) {
+  const el = document.getElementById('commentsList');
+  if (!comments.length) { el.innerHTML = '<div class="comments-empty">Aucun commentaire.</div>'; return; }
+  el.innerHTML = comments.map(c => `
+    <div class="comment-item" id="comment-${c.id}">
+      <div class="comment-header">
+        <span class="comment-author">${this.esc(c.author)}</span>
+        <span class="comment-date">${this.fmtDatetime(c.created_at)}</span>
+        ${canDelete ? `<button class="comment-delete" onclick="BO.deleteComment(${c.id})">×</button>` : ''}
+      </div>
+      <div class="comment-content">${this.esc(c.content)}</div>
+    </div>`).join('');
+};
+
+BO.closeComments = function() { document.getElementById('commentsModal').classList.add('hidden'); };
+
+BO.submitComment = async function() {
+  const bugId   = document.getElementById('commentsBugId').textContent;
+  const author  = document.getElementById('commentAuthor').value.trim();
+  const content = document.getElementById('commentContent').value.trim();
+  if (!author || !content) { this.showNotif('Remplissez tous les champs.', true); return; }
+  const btn = document.getElementById('btnSubmitComment');
+  btn.textContent = 'Envoi…'; btn.disabled = true;
+  try {
+    await DB.insertComment(bugId, author, content);
+    document.getElementById('commentAuthor').value  = '';
+    document.getElementById('commentContent').value = '';
+    const comments = await DB.fetchComments(bugId);
+    this._renderComments(comments, true);
+  } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  finally { btn.textContent = 'Publier'; btn.disabled = false; }
+};
+
+BO.deleteComment = async function(id) {
+  if (!confirm('Supprimer ce commentaire ?')) return;
+  try {
+    await DB.deleteComment(id);
+    const bugId = document.getElementById('commentsBugId').textContent;
+    const comments = await DB.fetchComments(bugId);
+    this._renderComments(comments, true);
+    this.showNotif('✓ Commentaire supprimé');
+  } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+};
+
+BO.exportCSV = function() {
+  const data = this.getSorted(this.getFiltered());
+  const headers = ['ID','Type','Catégorie','Priorité','Titre','Description','État','Date'];
+  const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
+  const rows = data.map(b => [b.id,b.type,b.category,b.priority,b.title,b.description,b.state,b.date].map(esc).join(','));
+  const csv  = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download=`command-post-missions-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+};
+
+BO.fmtDatetime = function(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+};
