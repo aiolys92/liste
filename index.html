@@ -19,23 +19,33 @@
   <main class="main-container">
 
     <div class="page-header">
-      <h1>Rapports de bugs</h1>
-      <p>Liste des anomalies, régressions et demandes d'amélioration recensées par la communauté.</p>
+      <div class="page-header-row">
+        <div>
+          <h1>Rapports de bugs</h1>
+          <p>Liste des anomalies, régressions et demandes d'amélioration recensées par la communauté.</p>
+        </div>
+        <!-- Toggle vue -->
+        <div class="view-toggle">
+          <button class="view-btn view-btn-active" id="btnViewList"   title="Vue liste">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="2" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="6.5" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="11" width="13" height="2" rx="1" fill="currentColor"/></svg>
+            Liste
+          </button>
+          <button class="view-btn" id="btnViewKanban" title="Vue kanban">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1"  y="1" width="4" height="13" rx="1" fill="currentColor"/><rect x="5.5" y="1" width="4" height="9"  rx="1" fill="currentColor"/><rect x="10" y="1" width="4" height="11" rx="1" fill="currentColor"/></svg>
+            Kanban
+          </button>
+        </div>
+      </div>
       <div class="stats-row" id="statsRow"></div>
     </div>
 
-    <!-- Bannière d'erreur -->
-    <div id="errorBanner" style="display:none; background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); border-radius:var(--r-md); color:var(--p-critical); padding:12px 18px; margin-bottom:16px; font-size:13px;"></div>
+    <div id="errorBanner" style="display:none;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:var(--r-md);color:var(--p-critical);padding:12px 18px;margin-bottom:16px;font-size:13px;"></div>
 
+    <!-- FILTRES (partagés liste + kanban, sauf catégorie masquée en kanban) -->
     <div class="filters-bar">
       <div class="filter-group">
         <span class="filter-label">Type</span>
         <select class="filter-select" id="filterType"><option value="">Tous</option></select>
-      </div>
-      <div class="filter-divider"></div>
-      <div class="filter-group">
-        <span class="filter-label">Catégorie</span>
-        <select class="filter-select" id="filterCategory"><option value="">Toutes</option></select>
       </div>
       <div class="filter-divider"></div>
       <div class="filter-group">
@@ -54,28 +64,36 @@
       <span class="filter-count" id="filterCount"></span>
     </div>
 
-    <div class="bugs-table-wrapper">
-      <table class="bugs-table">
-        <thead>
-          <tr>
-            <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
-            <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-            <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
-            <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
-            <th class="col-description">Description</th>
-            <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
-            <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
-          </tr>
-        </thead>
-        <tbody id="bugsTableBody">
-          <tr id="loadingRow">
-            <td colspan="7" style="text-align:center; padding:48px; color:var(--text-muted); font-size:13px;">
-              <span style="opacity:.5">Chargement…</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="pagination" id="pagination"></div>
+    <!-- PANEL LISTE -->
+    <div id="panelList">
+      <div class="bugs-table-wrapper">
+        <table class="bugs-table">
+          <thead>
+            <tr>
+              <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
+              <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+              <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
+              <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+              <th class="col-description">Description</th>
+              <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
+              <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="bugsTableBody">
+            <tr id="loadingRow">
+              <td colspan="7" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px;">
+                <span style="opacity:.5">Chargement…</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <!-- PANEL KANBAN -->
+    <div id="panelKanban" style="display:none;">
+      <div class="kanban-board" id="kanbanBoard"></div>
     </div>
 
   </main>
