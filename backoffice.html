@@ -232,6 +232,23 @@
   </div>
 
 
+
+  <!-- MODALE ÉTAT -->
+  <div class="modal-overlay hidden" id="stateModalOverlay">
+    <div class="modal" style="max-width:320px;">
+      <div class="modal-header">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px;" id="stateModalSubtitle"></div>
+          <div class="modal-title" style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="stateModalTitle"></div>
+        </div>
+        <button class="modal-close" onclick="BO.closeStateModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding:8px;">
+        <div id="stateModalList"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE ACTIONS -->
   <div class="modal-overlay hidden" id="actionModalOverlay">
     <div class="modal" style="max-width:340px;">

@@ -25,7 +25,6 @@ const BO = {
   deleteTarget: null,
   activeTab: 'bugs',
   selected: new Set(),
-  openStateMenu: null,
   openActionMenu: null,
 
   // ============================================================
@@ -54,9 +53,6 @@ const BO = {
     this.renderConfigTab();
     // Fermer dropdown état au clic ailleurs
     document.addEventListener('click', e => {
-      if (this.openStateMenu && !e.target.closest('.state-dropdown-wrap')) {
-        this.closeStateMenu();
-      }
     });
   },
 
@@ -163,6 +159,7 @@ const BO = {
     document.getElementById('commentsModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('commentsModal'))this.closeComments();});
     document.getElementById('historyModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('historyModal'))this.closeHistory();});
     document.getElementById('actionModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('actionModalOverlay'))this.closeActionModal();});
+    document.getElementById('stateModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('stateModalOverlay'))this.closeStateModal();});
   },
 
   bindBulkEvents() {
@@ -284,46 +281,51 @@ const BO = {
 
   renderStateDropdown(b) {
     const ts=this.toSlug,d=this.esc.bind(this);
-    const items=this.config.states.map(s=>`
-      <div class="state-menu-item ${s===b.state?'current':''}" onclick="BO.changeState('${d(b.id)}','${d(s)}',event)">
-        <span class="badge badge-state-${ts(s)}" style="pointer-events:none"><span class="badge-dot"></span>${d(s)}</span>
+    return `<span class="badge badge-state-${ts(b.state)} state-badge-btn"
+      onclick="BO.openStateModal('${d(b.id)}')"
+      title="Changer l'état"><span class="badge-dot"></span>${d(b.state)} ▾</span>`;
+  },
+
+  openStateModal(id) {
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    const d  = this.esc.bind(this);
+    const ts = this.toSlug;
+    document.getElementById('stateModalSubtitle').innerHTML =
+      '<span class="bug-id">' + d(bug.id) + '</span>';
+    document.getElementById('stateModalTitle').textContent = bug.title;
+    document.getElementById('stateModalOverlay').dataset.bugId = id;
+    // Générer les options
+    const list = document.getElementById('stateModalList');
+    list.innerHTML = this.config.states.map(s => `
+      <div class="action-modal-item ${s===bug.state?'state-modal-current':''}" onclick="BO.pickState('${d(s)}')">
+        <span class="action-modal-icon"><span class="badge badge-state-${ts(s)}" style="pointer-events:none;"><span class="badge-dot"></span>${d(s)}</span></span>
+        <div>
+          <div class="action-modal-label" style="${s===bug.state?'color:var(--gold-mid)':''}">${d(s)}</div>
+          ${s===bug.state?'<div class="action-modal-desc">État actuel</div>':''}
+        </div>
+        ${s===bug.state?'<span style="margin-left:auto;color:var(--gold-mid);font-size:12px;">✓</span>':''}
       </div>`).join('');
-    return `<div class="state-dropdown-wrap">
-      <span class="badge badge-state-${ts(b.state)}" onclick="BO.toggleStateMenu('${d(b.id)}',event)"><span class="badge-dot"></span>${d(b.state)} ▾</span>
-      <div class="state-menu" id="sm-${d(b.id)}">${items}</div>
-    </div>`;
+    document.getElementById('stateModalOverlay').classList.remove('hidden');
   },
 
-  toggleStateMenu(id, e) {
-    e.stopPropagation();
-    const menu=document.getElementById(`sm-${id}`);
-    if(!menu)return;
-    if(this.openStateMenu && this.openStateMenu!==id){
-      document.getElementById(`sm-${this.openStateMenu}`)?.classList.remove('open');
-    }
-    menu.classList.toggle('open');
-    this.openStateMenu=menu.classList.contains('open')?id:null;
+  closeStateModal() {
+    document.getElementById('stateModalOverlay').classList.add('hidden');
   },
 
-  closeStateMenu() {
-    if(this.openStateMenu){
-      document.getElementById(`sm-${this.openStateMenu}`)?.classList.remove('open');
-      this.openStateMenu=null;
-    }
-  },
-
-  async changeState(id, newState, e) {
-    e?.stopPropagation();
-    this.closeStateMenu();
-    const bug=this.bugs.find(b=>b.id===id); if(!bug||bug.state===newState)return;
-    const oldState=bug.state;
+  async pickState(newState) {
+    const id  = document.getElementById('stateModalOverlay').dataset.bugId;
+    const bug = this.bugs.find(b => b.id === id);
+    this.closeStateModal();
+    if (!bug || bug.state === newState) return;
+    const oldState = bug.state;
     try {
-      await DB.updateBug(id,{state:newState});
-      await DB.insertHistory(id,'Admin','state',oldState,newState);
-      bug.state=newState;
+      await DB.updateBug(id, { state: newState });
+      await DB.insertHistory(id, 'Admin', 'state', oldState, newState);
+      bug.state = newState;
       this.render(); this.renderStats();
-      this.showNotif(`✓ État mis à jour : ${newState}`);
-    } catch(err){ this.showNotif('Erreur : '+err.message,true); }
+      this.showNotif('✓ État : ' + newState);
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
   },
 
   renderPagination(total,totalPages) {

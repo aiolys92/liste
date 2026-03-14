@@ -1647,3 +1647,16 @@ body.light .kanban-card { background: var(--bg-raised); }
   border: 1px solid rgba(255,208,64,0.2);
   border-radius: var(--r-md);
 }
+
+/* Badge état cliquable */
+.state-badge-btn {
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+}
+.state-badge-btn:hover {
+  filter: brightness(1.25);
+  transform: translateY(-1px);
+}
+.state-modal-current {
+  background: var(--gold-ghost);
+}
