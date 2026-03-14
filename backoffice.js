@@ -616,70 +616,223 @@ const BO = {
   closeHistory(){document.getElementById('historyModal').classList.add('hidden');},
 
   // ============================================================
-  // TIMELINE
+  // TIMELINE — complète
   // ============================================================
+  timeline: {
+    zoom: 'month',   // 'week' | 'month' | 'quarter'
+    group: 'category', // 'category' | 'assignee' | 'none'
+    filters: { category: '', assignee: '', state: '' }
+  },
+
   renderTimeline() {
-    const container=document.getElementById('panelTimeline');
-    const bugs=this.bugs.filter(b=>b.date);
-    if(!bugs.length){container.innerHTML='<div class="empty-state"><span class="empty-icon">📅</span><p>Aucune mission avec date.</p></div>';return;}
+    const container = document.getElementById('panelTimeline');
+    const tl = this.timeline;
 
-    const DAY_PX=28;
-    const dates=bugs.flatMap(b=>[b.date,b.due_date].filter(Boolean)).map(d=>new Date(d));
-    let minDate=new Date(Math.min(...dates)); minDate.setDate(1);
-    let maxDate=new Date(Math.max(...dates)); maxDate.setDate(maxDate.getDate()+14);
-    const totalDays=Math.ceil((maxDate-minDate)/(1000*60*60*24));
-    const totalW=totalDays*DAY_PX;
+    // Toolbar
+    container.innerHTML = `
+      <div class="tl-toolbar">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <div class="tl-zoom-group">
+            <button class="tl-zoom-btn ${tl.zoom==='week'?'active':''}"    onclick="BO.setTlZoom('week')">Semaine</button>
+            <button class="tl-zoom-btn ${tl.zoom==='month'?'active':''}"   onclick="BO.setTlZoom('month')">Mois</button>
+            <button class="tl-zoom-btn ${tl.zoom==='quarter'?'active':''}" onclick="BO.setTlZoom('quarter')">Trimestre</button>
+          </div>
+          <div class="filter-divider" style="height:22px;"></div>
+          <div class="filter-group">
+            <span class="filter-label">Grouper</span>
+            <select class="filter-select" style="min-width:120px;" onchange="BO.setTlGroup(this.value)">
+              <option value="category"  ${tl.group==='category' ?'selected':''}>Catégorie</option>
+              <option value="assignee"  ${tl.group==='assignee' ?'selected':''}>Assigné</option>
+              <option value="none"      ${tl.group==='none'     ?'selected':''}>Sans groupe</option>
+            </select>
+          </div>
+          <div class="filter-divider" style="height:22px;"></div>
+          <div class="filter-group">
+            <span class="filter-label">Catégorie</span>
+            <select class="filter-select" style="min-width:120px;" onchange="BO.setTlFilter('category',this.value)">
+              <option value="">Toutes</option>
+              ${this.config.categories.map(c=>`<option value="${this.esc(c)}" ${tl.filters.category===c?'selected':''}>${this.esc(c)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Assigné</span>
+            <select class="filter-select" style="min-width:120px;" onchange="BO.setTlFilter('assignee',this.value)">
+              <option value="">Tous</option>
+              ${this.members.map(m=>`<option value="${this.esc(m.name)}" ${tl.filters.assignee===m.name?'selected':''}>${this.esc(m.name)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">État</span>
+            <select class="filter-select" style="min-width:120px;" onchange="BO.setTlFilter('state',this.value)">
+              <option value="">Tous</option>
+              ${this.config.states.map(s=>`<option value="${this.esc(s)}" ${tl.filters.state===s?'selected':''}>${this.esc(s)}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;" onclick="BO.scrollTlToday()">⊙ Aujourd'hui</button>
+      </div>
+      <div id="tlBoard"></div>`;
 
-    const toX=d=>Math.round((new Date(d)-minDate)/(1000*60*60*24))*DAY_PX;
+    this._drawTimeline();
+  },
 
-    // Header mois
-    const months=[];
-    let cur=new Date(minDate);
-    while(cur<maxDate){
-      const start=toX(cur);
-      const next=new Date(cur.getFullYear(), cur.getMonth()+1, 1);
-      const end=Math.min(toX(next),totalW);
-      months.push({label:cur.toLocaleDateString('fr-FR',{month:'short',year:'numeric'}),x:start,w:end-start});
-      cur=next;
+  setTlZoom(z)           { this.timeline.zoom=z;                        this._drawTimeline(); },
+  setTlGroup(g)          { this.timeline.group=g;                       this._drawTimeline(); },
+  setTlFilter(key,val)   { this.timeline.filters[key]=val;              this._drawTimeline(); },
+  scrollTlToday()        { document.getElementById('tlBoard')?.querySelector('.tl-today-line')?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); },
+
+  _drawTimeline() {
+    const tl = this.timeline;
+    const DAY_PX = tl.zoom==='week' ? 60 : tl.zoom==='month' ? 28 : 12;
+    const LABEL_W = 200;
+
+    // Filtrer
+    let bugs = this.bugs.filter(b => b.date);
+    if (tl.filters.category) bugs = bugs.filter(b => b.category === tl.filters.category);
+    if (tl.filters.assignee) bugs = bugs.filter(b => b.assignee === tl.filters.assignee);
+    if (tl.filters.state)    bugs = bugs.filter(b => b.state    === tl.filters.state);
+
+    const board = document.getElementById('tlBoard');
+    if (!bugs.length) { board.innerHTML='<div class="empty-state" style="padding:48px"><span class="empty-icon">📅</span><p>Aucune mission ne correspond aux filtres.</p></div>'; return; }
+
+    // Plage de dates
+    const allDates = bugs.flatMap(b=>[b.date,b.due_date].filter(Boolean)).map(d=>new Date(d));
+    let minDate = new Date(Math.min(...allDates));
+    let maxDate = new Date(Math.max(...allDates));
+    // Étendre
+    if (tl.zoom==='week')    { minDate.setDate(minDate.getDate()-3);  maxDate.setDate(maxDate.getDate()+7); }
+    else if (tl.zoom==='month') { minDate.setDate(1);                maxDate.setDate(maxDate.getDate()+14); }
+    else                     { minDate.setDate(1); minDate.setMonth(minDate.getMonth()-1); maxDate.setMonth(maxDate.getMonth()+2); }
+
+    const totalDays = Math.ceil((maxDate-minDate)/(864e5));
+    const totalW    = totalDays * DAY_PX;
+    const toX = d  => Math.round((new Date(d)-minDate)/864e5)*DAY_PX;
+    const today     = new Date(); today.setHours(0,0,0,0);
+    const todayX    = toX(today);
+
+    // Couleurs état
+    const stateColors = {'Nouveau':'#40e0b0','En cours':'#50b8ff','Résolu':'#70d060','Fermé':'#7a7464','Rejeté':'#ff5252','En attente':'#ffd040'};
+    const prioColors  = {'Critique':'#ff5252','Haute':'#ff9040','Moyenne':'#ffd040','Basse':'#50b8ff','Mineure':'#c060ff'};
+
+    // Générer les ticks (jours/semaines/mois selon zoom)
+    const ticks = [];
+    const tickLabels = [];
+    let cur = new Date(minDate);
+    if (tl.zoom === 'week') {
+      while (cur <= maxDate) {
+        ticks.push({ x: toX(cur), weekend: cur.getDay()===0||cur.getDay()===6 });
+        tickLabels.push({ x: toX(cur), label: cur.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}) });
+        cur.setDate(cur.getDate()+1);
+      }
+    } else if (tl.zoom === 'month') {
+      while (cur <= maxDate) {
+        ticks.push({ x: toX(cur), weekend: cur.getDay()===0||cur.getDay()===6 });
+        if (cur.getDate()===1 || cur.getDay()===1) tickLabels.push({ x: toX(cur), label: cur.toLocaleDateString('fr-FR',{day:'numeric',month:'short'}) });
+        cur.setDate(cur.getDate()+1);
+      }
+    } else {
+      while (cur <= maxDate) {
+        if (cur.getDate()===1) tickLabels.push({ x: toX(cur), label: cur.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}) });
+        ticks.push({ x: toX(cur), weekend: cur.getDay()===0||cur.getDay()===6 });
+        cur.setDate(cur.getDate()+1);
+      }
     }
 
-    const todayX=toX(new Date());
-    const priorityColors={'Critique':'#ff5252','Haute':'#ff9040','Moyenne':'#ffd040','Basse':'#50b8ff','Mineure':'#c060ff'};
+    // Groupement
+    let groups = [];
+    if (tl.group === 'category') {
+      const cats = [...new Set(bugs.map(b=>b.category))];
+      cats.forEach(cat => { const items=bugs.filter(b=>b.category===cat); if(items.length) groups.push({label:cat,items}); });
+    } else if (tl.group === 'assignee') {
+      const assignees = [...new Set(bugs.map(b=>b.assignee||'Non assigné'))];
+      assignees.forEach(a => { const items=bugs.filter(b=>(b.assignee||'Non assigné')===a); if(items.length) groups.push({label:a,items}); });
+    } else {
+      const po={'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
+      bugs.sort((a,b)=>(po[a.priority]??99)-(po[b.priority]??99));
+      groups.push({label:null,items:bugs});
+    }
 
-    const po={'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
-    const sorted=[...bugs].sort((a,b)=>(po[a.priority]??99)-(po[b.priority]??99));
+    // Rendu
+    const weekendBg = ticks.filter(t=>t.weekend).map(t=>`<div class="tl-weekend" style="left:${t.x}px;width:${DAY_PX}px;"></div>`).join('');
+    const gridLines = ticks.map(t=>`<div class="tl-grid-line" style="left:${t.x}px;"></div>`).join('');
+    const todayLine = `<div class="tl-today-line" style="left:${todayX}px;"><div class="tl-today-label">Auj.</div></div>`;
+    const headerTicks = tickLabels.map(t=>`<div class="tl-tick-label" style="left:${LABEL_W+t.x}px;">${t.label}</div>`).join('');
 
-    container.innerHTML=`
-      <div class="timeline-wrap">
-        <div style="min-width:${180+totalW}px;">
-          <!-- Header mois -->
-          <div style="display:flex;padding-left:180px;margin-bottom:6px;position:relative;height:24px;">
-            ${months.map(m=>`<div class="timeline-month" style="position:absolute;left:${180+m.x}px;width:${m.w}px;">${m.label}</div>`).join('')}
+    let rowsHtml = '';
+    groups.forEach(group => {
+      if (group.label !== null) {
+        rowsHtml += `<div class="tl-group-header"><span>${this.esc(group.label)}</span></div>`;
+      }
+      group.items.forEach(b => {
+        const startX = toX(b.date);
+        const endX   = b.due_date ? toX(b.due_date) : startX + DAY_PX*3;
+        const barW   = Math.max(endX - startX, DAY_PX*0.8);
+        const color  = stateColors[b.state] || '#888';
+        const pcolor = prioColors[b.priority] || '#888';
+        const member = this.members.find(m=>m.name===b.assignee);
+        const avatarSvg = member
+          ? `<span class="tl-bar-avatar" style="background:${member.color};">${this.esc(member.initials)}</span>`
+          : '';
+        const isOverdue = b.due_date && new Date(b.due_date)<today && b.state!=='Résolu' && b.state!=='Fermé';
+        const ts = this.toSlug;
+        // Tooltip data
+        const tip = `${b.id} | ${b.priority} | ${b.state}${b.assignee?' | '+b.assignee:''}${b.due_date?' | Échéance: '+this.fmtDate(b.due_date):''}`;
+
+        rowsHtml += `<div class="tl-row">
+          <div class="tl-label" title="${this.esc(b.title)}">
+            <span class="tl-label-prio" style="background:${pcolor}22;color:${pcolor};border-color:${pcolor}44;">${b.priority.slice(0,3)}</span>
+            <span class="tl-label-text">${this.esc(b.title)}</span>
           </div>
-          <!-- Lignes -->
-          ${sorted.map(b=>{
-            const color=priorityColors[b.priority]||'#888';
-            const startX=toX(b.date);
-            const endX=b.due_date?toX(b.due_date):startX+DAY_PX*3;
-            const barW=Math.max(endX-startX,DAY_PX);
-            const ts=this.toSlug;
-            return `<div class="timeline-row">
-              <div class="timeline-label">
-                <span class="badge badge-prio-${ts(b.priority)}" style="flex-shrink:0;font-size:9px;padding:1px 5px;">${b.priority.slice(0,3)}</span>
-                <span class="timeline-label-text" title="${this.esc(b.title)}">${this.esc(b.title)}</span>
-              </div>
-              <div class="timeline-track" style="width:${totalW}px;position:relative;">
-                ${months.map(m=>`<div class="timeline-grid-line" style="left:${m.x}px;"></div>`).join('')}
-                <div class="timeline-today" style="left:${todayX}px;"></div>
-                <div class="timeline-bar" style="left:${startX}px;width:${barW}px;background:${color}88;border:1px solid ${color};"
-                  title="${b.id} — du ${this.fmtDate(b.date)}${b.due_date?' au '+this.fmtDate(b.due_date):''}">
-                  ${b.id}
-                </div>
-              </div>
-            </div>`;
-          }).join('')}
+          <div class="tl-track" style="width:${totalW}px;">
+            ${weekendBg}${gridLines}${todayLine}
+            <div class="tl-bar ${isOverdue?'tl-bar-overdue':''}"
+              style="left:${startX}px;width:${barW}px;background:${color}30;border:1.5px solid ${color};border-left:3px solid ${pcolor};"
+              onclick="BO.openActionModal('${this.esc(b.id)}')"
+              data-tip="${this.esc(tip)}">
+              ${avatarSvg}
+              <span class="tl-bar-label">${barW > 50 ? this.esc(b.title) : this.esc(b.id)}</span>
+            </div>
+          </div>
+        </div>`;
+      });
+    });
+
+    // No-date list
+    const noDates = this.bugs.filter(b=>!b.date);
+
+    board.innerHTML = `
+      <div class="tl-wrap" id="tlWrap">
+        <div style="min-width:${LABEL_W+totalW}px;position:relative;">
+          <div class="tl-header" style="padding-left:${LABEL_W}px;height:32px;position:relative;">
+            ${headerTicks}
+          </div>
+          ${rowsHtml}
         </div>
-      </div>`;
+      </div>
+      ${noDates.length ? `<div class="tl-no-date"><span style="color:var(--text-muted);font-size:12px;">⚠ ${noDates.length} mission${noDates.length>1?'s':''} sans date : ${noDates.map(b=>b.id).join(', ')}</span></div>` : ''}
+      <div id="tlTooltip" class="tl-tooltip"></div>
+    `;
+
+    // Tooltip au survol
+    const tooltip = document.getElementById('tlTooltip');
+    board.querySelectorAll('.tl-bar').forEach(bar => {
+      bar.addEventListener('mouseenter', e => {
+        tooltip.textContent = bar.dataset.tip;
+        tooltip.classList.add('visible');
+      });
+      bar.addEventListener('mousemove', e => {
+        const rect = board.getBoundingClientRect();
+        tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
+        tooltip.style.top  = (e.clientY - rect.top  - 10) + 'px';
+      });
+      bar.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+    });
+
+    // Scroll auto vers aujourd'hui
+    setTimeout(() => {
+      const wrap = document.getElementById('tlWrap');
+      if (wrap) wrap.scrollLeft = Math.max(0, todayX - 300);
+    }, 50);
   },
 
   // ============================================================
