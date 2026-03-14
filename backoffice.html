@@ -231,6 +231,50 @@
     </div>
   </div>
 
+
+  <!-- MODALE ACTIONS -->
+  <div class="modal-overlay hidden" id="actionModalOverlay">
+    <div class="modal" style="max-width:340px;">
+      <div class="modal-header">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:5px;display:flex;align-items:center;gap:6px;" id="actionModalSubtitle"></div>
+          <div class="modal-title" style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="actionModalTitle"></div>
+        </div>
+        <button class="modal-close" onclick="BO.closeActionModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding:8px;">
+
+        <div class="action-modal-item" onclick="BO.doAction('edit')">
+          <span class="action-modal-icon">✏️</span>
+          <div><div class="action-modal-label">Modifier</div><div class="action-modal-desc">Éditer les informations de la mission</div></div>
+        </div>
+
+        <div class="action-modal-item" onclick="BO.doAction('comments')">
+          <span class="action-modal-icon">💬</span>
+          <div><div class="action-modal-label">Commentaires</div><div class="action-modal-desc">Voir et ajouter des commentaires</div></div>
+        </div>
+
+        <div class="action-modal-item" onclick="BO.doAction('history')">
+          <span class="action-modal-icon">📋</span>
+          <div><div class="action-modal-label">Historique</div><div class="action-modal-desc">Consulter les modifications</div></div>
+        </div>
+
+        <div class="action-modal-sep"></div>
+
+        <div class="action-modal-item" onclick="BO.doAction('archive')">
+          <span class="action-modal-icon">📦</span>
+          <div><div class="action-modal-label">Archiver</div><div class="action-modal-desc">Déplacer dans les archives</div></div>
+        </div>
+
+        <div class="action-modal-item danger" onclick="BO.doAction('delete')">
+          <span class="action-modal-icon">🗑️</span>
+          <div><div class="action-modal-label">Supprimer</div><div class="action-modal-desc">Supprimer définitivement</div></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script src="supabase.js"></script>
   <script src="backoffice.js"></script>
 </body>

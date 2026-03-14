@@ -1322,3 +1322,48 @@ body.light .kanban-card { background: var(--bg-raised); }
 
 .action-menu-item.danger { color: var(--p-critical); }
 .action-menu-item.danger:hover { background: rgba(255,82,82,0.1); color: var(--p-critical); }
+
+/* ============================================
+   MODALE ACTIONS
+   ============================================ */
+.action-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 0.13s;
+  margin-bottom: 2px;
+}
+.action-modal-item:hover { background: var(--bg-hover); }
+.action-modal-item.danger:hover { background: rgba(255,82,82,0.08); }
+.action-modal-item.danger .action-modal-label { color: var(--p-critical); }
+
+.action-modal-icon {
+  font-size: 20px;
+  width: 36px; height: 36px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-base);
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-modal-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 2px;
+}
+
+.action-modal-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.action-modal-sep {
+  height: 1px;
+  background: var(--border-dim);
+  margin: 6px 4px;
+}
