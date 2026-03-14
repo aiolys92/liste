@@ -7,18 +7,17 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
   <header class="site-header">
     <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>
     <nav class="header-nav">
       <a href="index.html" class="active">Mission Board</a>
       <a href="archives.html">Archives</a>
+      <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
       <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
     </nav>
   </header>
 
   <main class="main-container">
-
     <div class="page-header">
       <div class="page-header-row">
         <div>
@@ -28,13 +27,11 @@
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-secondary" id="btnExportCSV" style="font-size:12px;padding:7px 14px;">↓ Export CSV</button>
           <div class="view-toggle">
-            <button class="view-btn view-btn-active" id="btnViewList" title="Vue liste">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="2" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="6.5" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="11" width="13" height="2" rx="1" fill="currentColor"/></svg>
-              Liste
+            <button class="view-btn view-btn-active" id="btnViewList">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="2" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="6.5" width="13" height="2" rx="1" fill="currentColor"/><rect x="1" y="11" width="13" height="2" rx="1" fill="currentColor"/></svg>Liste
             </button>
-            <button class="view-btn" id="btnViewKanban" title="Vue kanban">
-              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="4" height="13" rx="1" fill="currentColor"/><rect x="5.5" y="1" width="4" height="9" rx="1" fill="currentColor"/><rect x="10" y="1" width="4" height="11" rx="1" fill="currentColor"/></svg>
-              Kanban
+            <button class="view-btn" id="btnViewKanban">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="4" height="13" rx="1" fill="currentColor"/><rect x="5.5" y="1" width="4" height="9" rx="1" fill="currentColor"/><rect x="10" y="1" width="4" height="11" rx="1" fill="currentColor"/></svg>Kanban
             </button>
           </div>
         </div>
@@ -45,83 +42,60 @@
     <div id="errorBanner" style="display:none;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:var(--r-md);color:var(--p-critical);padding:12px 18px;margin-bottom:16px;font-size:13px;"></div>
 
     <div class="filters-bar">
-      <div class="filter-group">
-        <span class="filter-label">Type</span>
-        <select class="filter-select" id="filterType"><option value="">Tous</option></select>
-      </div>
+      <div class="filter-group"><span class="filter-label">Type</span><select class="filter-select" id="filterType"><option value="">Tous</option></select></div>
       <div class="filter-divider"></div>
-      <div class="filter-group">
-        <span class="filter-label">Priorité</span>
-        <select class="filter-select" id="filterPriority"><option value="">Toutes</option></select>
-      </div>
+      <div class="filter-group"><span class="filter-label">Priorité</span><select class="filter-select" id="filterPriority"><option value="">Toutes</option></select></div>
       <div class="filter-divider"></div>
-      <div class="filter-group">
-        <span class="filter-label">État</span>
-        <select class="filter-select" id="filterState"><option value="">Tous</option></select>
-      </div>
-      <div class="search-wrapper">
-        <span class="search-icon">⌕</span>
-        <input type="text" class="search-input" id="searchInput" placeholder="Rechercher…">
-      </div>
+      <div class="filter-group"><span class="filter-label">État</span><select class="filter-select" id="filterState"><option value="">Tous</option></select></div>
+      <div class="search-wrapper"><span class="search-icon">⌕</span><input type="text" class="search-input" id="searchInput" placeholder="Rechercher…"></div>
       <span class="filter-count" id="filterCount"></span>
     </div>
 
-    <!-- PANEL LISTE -->
     <div id="panelList">
       <div class="bugs-table-wrapper">
         <table class="bugs-table">
           <thead>
             <tr>
-              <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
-              <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-              <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
-              <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+              <th class="col-type"     data-sort="type">Type <span class="sort-arrow">↕</span></th>
+              <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+              <th class="col-id"       data-sort="id">ID <span class="sort-arrow">↕</span></th>
+              <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
               <th class="col-description">Description</th>
-              <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
-              <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
-              <th class="col-comments"    style="width:54px;text-align:center;">💬</th>
+              <th class="col-state"    data-sort="state">État <span class="sort-arrow">↕</span></th>
+              <th class="col-assignee">👤</th>
+              <th class="col-due"      data-sort="due_date">Échéance <span class="sort-arrow">↕</span></th>
+              <th class="col-date"     data-sort="date">Créé <span class="sort-arrow">↕</span></th>
+              <th class="col-comments" style="width:54px;text-align:center;">💬</th>
             </tr>
           </thead>
           <tbody id="bugsTableBody">
-            <tr id="loadingRow">
-              <td colspan="8" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px;"><span style="opacity:.5">Chargement…</span></td>
-            </tr>
+            <tr id="loadingRow"><td colspan="10" style="text-align:center;padding:48px;color:var(--text-muted);"><span style="opacity:.5">Chargement…</span></td></tr>
           </tbody>
         </table>
         <div class="pagination" id="pagination"></div>
       </div>
     </div>
 
-    <!-- PANEL KANBAN -->
     <div id="panelKanban" style="display:none;">
       <div class="kanban-board" id="kanbanBoard"></div>
     </div>
-
   </main>
 
   <!-- MODALE COMMENTAIRES -->
   <div class="modal-overlay hidden" id="commentsModal">
     <div class="modal" style="max-width:560px;">
       <div class="modal-header">
-        <div>
-          <div class="modal-title" id="commentsModalTitle"></div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:'DM Mono',monospace;" id="commentsBugId"></div>
-        </div>
+        <div><div class="modal-title" id="commentsModalTitle"></div><div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:'DM Mono',monospace;" id="commentsBugId"></div></div>
         <button class="modal-close" onclick="Front.closeComments()">×</button>
       </div>
       <div class="modal-body" style="padding:0;">
-
-        <!-- Liste commentaires -->
         <div id="commentsList" style="max-height:300px;overflow-y:auto;padding:16px 24px;"></div>
-
-        <!-- Formulaire ajout -->
         <div class="comment-form">
           <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Laisser un commentaire</div>
           <input type="text" class="form-input" id="commentAuthor" placeholder="Votre nom…" style="margin-bottom:8px;">
           <textarea class="form-textarea" id="commentContent" placeholder="Votre commentaire…" style="min-height:72px;margin-bottom:10px;"></textarea>
           <button class="btn btn-primary" id="btnSubmitComment" onclick="Front.submitComment()" style="width:100%;justify-content:center;">Publier</button>
         </div>
-
       </div>
     </div>
   </div>

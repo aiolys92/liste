@@ -6,183 +6,33 @@
   <title>Command Post — Admin</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    /* ---- TABS ---- */
-    .tabs-bar {
-      display: flex;
-      gap: 2px;
-      background: var(--bg-raised);
-      border: 1px solid var(--border-base);
-      border-radius: var(--r-lg);
-      padding: 4px;
-      width: fit-content;
-      margin-bottom: 28px;
-    }
-    .tab-btn {
-      padding: 8px 22px;
-      border-radius: 7px;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.18s;
-      letter-spacing: 0.3px;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-    .tab-btn:hover { color: var(--text-bright); background: var(--bg-hover); }
-    .tab-btn.tab-active {
-      background: var(--bg-overlay);
-      color: var(--text-bright);
-      border: 1px solid var(--border-base);
-      box-shadow: var(--shadow-sm);
-    }
-    .tab-btn.tab-active .tab-icon { color: var(--gold-mid); }
-    .tab-icon { font-size: 14px; }
-
-    /* ---- CONFIG PANEL ---- */
-    .config-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    @media (max-width: 700px) { .config-grid { grid-template-columns: 1fr; } }
-
-    .config-section {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-base);
-      border-radius: var(--r-lg);
-      overflow: hidden;
-    }
-
-    .config-section-header {
-      background: var(--bg-raised);
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border-dim);
-      position: relative;
-    }
-    .config-section-header::after {
-      content: '';
-      position: absolute; inset: 0 0 auto 0; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
-    }
-    .config-section-title {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 15px; font-weight: 700;
-      letter-spacing: 1px; text-transform: uppercase;
-      color: var(--text-bright);
-    }
-    .config-section-count {
-      font-size: 11px; color: var(--text-muted);
-      background: var(--bg-overlay);
-      border: 1px solid var(--border-base);
-      border-radius: 10px; padding: 2px 10px;
-      font-family: 'DM Mono', monospace;
-    }
-
-    .config-items {
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-height: 60px;
-    }
-
-    .config-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--bg-raised);
-      border: 1px solid var(--border-dim);
-      border-radius: var(--r-md);
-      padding: 6px 8px 6px 10px;
-      transition: border-color 0.15s;
-      animation: rowIn 0.2s ease both;
-    }
-    .config-item:hover { border-color: var(--border-base); }
-
-    .config-item-drag {
-      color: var(--text-faint);
-      font-size: 14px;
-      cursor: grab;
-      user-select: none;
-      flex-shrink: 0;
-    }
-
-    .config-item-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      outline: none;
-      color: var(--text-bright);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      padding: 0;
-    }
-    .config-item-input:focus {
-      color: var(--gold-bright);
-    }
-
-    .config-item-delete {
-      background: none;
-      border: none;
-      color: var(--text-faint);
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-      padding: 0 4px;
-      transition: color 0.15s;
-      flex-shrink: 0;
-    }
-    .config-item-delete:hover { color: var(--p-critical); }
-
-    .config-add-row {
-      padding: 0 14px 12px;
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .config-add-input {
-      flex: 1;
-      padding: 8px 12px !important;
-      font-size: 13px !important;
-    }
-    .config-add-btn {
-      padding: 8px 14px !important;
-      white-space: nowrap;
-      font-size: 12px !important;
-    }
-
-    .config-save-row {
-      padding: 12px 14px;
-      border-top: 1px solid var(--border-dim);
-      background: var(--bg-raised);
-    }
-    .config-save-row .btn {
-      width: 100%;
-      justify-content: center;
-      font-size: 12px;
-    }
-
-    .config-hint {
-      color: var(--text-muted);
-      font-size: 12px;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-dim);
-      border-radius: var(--r-md);
-    }
+    .selected-row { background: rgba(200,160,48,0.05) !important; }
+    .tabs-bar { display:flex;gap:2px;background:var(--bg-raised);border:1px solid var(--border-base);border-radius:var(--r-lg);padding:4px;width:fit-content;margin-bottom:28px; }
+    .tab-btn { padding:8px 20px;border-radius:7px;border:none;background:transparent;color:var(--text-muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:7px; }
+    .tab-btn:hover { color:var(--text-bright);background:var(--bg-hover); }
+    .tab-btn.tab-active { background:var(--bg-overlay);color:var(--text-bright);border:1px solid var(--border-base);box-shadow:var(--shadow-sm); }
+    .tab-btn.tab-active .tab-icon { color:var(--gold-mid); }
+    .config-grid { display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px; }
+    @media(max-width:900px){.config-grid{grid-template-columns:1fr;}}
+    .config-section{background:var(--bg-surface);border:1px solid var(--border-base);border-radius:var(--r-lg);overflow:hidden;}
+    .config-section-header{background:var(--bg-raised);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-dim);position:relative;}
+    .config-section-header::after{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,var(--border-strong),transparent);}
+    .config-section-title{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-bright);}
+    .config-section-count{font-size:11px;color:var(--text-muted);background:var(--bg-overlay);border:1px solid var(--border-base);border-radius:10px;padding:2px 10px;font-family:'DM Mono',monospace;}
+    .config-items{padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:60px;}
+    .config-item{display:flex;align-items:center;gap:8px;background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:6px 8px 6px 10px;transition:border-color .15s;animation:rowIn .2s ease both;}
+    .config-item:hover{border-color:var(--border-base);}
+    .config-item-drag{color:var(--text-faint);font-size:14px;cursor:grab;user-select:none;flex-shrink:0;}
+    .config-item-input{flex:1;background:transparent;border:none;outline:none;color:var(--text-bright);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:0;}
+    .config-item-input:focus{color:var(--gold-bright);}
+    .config-item-delete{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;transition:color .15s;flex-shrink:0;}
+    .config-item-delete:hover{color:var(--p-critical);}
+    .config-add-row{padding:0 14px 12px;display:flex;gap:8px;align-items:center;}
+    .config-add-input{flex:1;padding:8px 12px!important;font-size:13px!important;}
+    .config-add-btn{padding:8px 14px!important;white-space:nowrap;font-size:12px!important;}
+    .config-save-row{padding:12px 14px;border-top:1px solid var(--border-dim);background:var(--bg-raised);}
+    .config-save-row .btn{width:100%;justify-content:center;font-size:12px;}
+    .config-hint{color:var(--text-muted);font-size:12px;margin-bottom:20px;display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-surface);border:1px solid var(--border-dim);border-radius:var(--r-md);}
   </style>
 </head>
 <body>
@@ -192,6 +42,7 @@
     <nav class="header-nav">
       <a href="index.html">← Vue publique</a>
       <a href="archives.html">Archives</a>
+      <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
       <a href="#" onclick="BO.logout()" style="color:var(--p-critical);border-color:rgba(255,82,82,0.2);">Déconnexion</a>
     </nav>
   </header>
@@ -200,7 +51,6 @@
 
   <main class="main-container">
 
-    <!-- PAGE HEADER -->
     <div class="page-header">
       <div class="page-header-row">
         <div>
@@ -217,40 +67,37 @@
 
     <!-- TABS -->
     <div class="tabs-bar">
-      <button class="tab-btn tab-active" id="tabBugs">
-        <span class="tab-icon">⚠</span> Missions
-      </button>
-      <button class="tab-btn" id="tabConfig">
-        <span class="tab-icon">⚙</span> Configuration
-      </button>
+      <button class="tab-btn tab-active" id="tabBugs"><span class="tab-icon">⚠</span>Missions</button>
+      <button class="tab-btn" id="tabTimeline"><span class="tab-icon">📅</span>Timeline</button>
+      <button class="tab-btn" id="tabConfig"><span class="tab-icon">⚙</span>Configuration</button>
     </div>
 
     <!-- PANEL BUGS -->
     <div id="panelBugs">
+
+      <!-- Bulk bar -->
+      <div class="bulk-bar" id="bulkBar">
+        <span><strong class="bulk-bar-count" id="bulkCount">0</strong> sélectionnée(s)</span>
+        <div class="bulk-bar-sep"></div>
+        <span style="font-size:12px;color:var(--text-muted);">Changer l'état :</span>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="BO.bulkChangeState('En cours')">En cours</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="BO.bulkChangeState('Résolu')">Résolu</button>
+          <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;" onclick="BO.bulkChangeState('Fermé')">Fermé</button>
+        </div>
+        <div class="bulk-bar-sep"></div>
+        <button class="btn btn-danger" style="font-size:11px;padding:4px 12px;" onclick="BO.bulkArchive()">📦 Archiver</button>
+      </div>
+
       <div class="filters-bar">
-        <div class="filter-group">
-          <span class="filter-label">Type</span>
-          <select class="filter-select" id="filterType"><option value="">Tous</option></select>
-        </div>
+        <div class="filter-group"><span class="filter-label">Type</span><select class="filter-select" id="filterType"><option value="">Tous</option></select></div>
         <div class="filter-divider"></div>
-        <div class="filter-group">
-          <span class="filter-label">Catégorie</span>
-          <select class="filter-select" id="filterCategory"><option value="">Toutes</option></select>
-        </div>
+        <div class="filter-group"><span class="filter-label">Catégorie</span><select class="filter-select" id="filterCategory"><option value="">Toutes</option></select></div>
         <div class="filter-divider"></div>
-        <div class="filter-group">
-          <span class="filter-label">Priorité</span>
-          <select class="filter-select" id="filterPriority"><option value="">Toutes</option></select>
-        </div>
+        <div class="filter-group"><span class="filter-label">Priorité</span><select class="filter-select" id="filterPriority"><option value="">Toutes</option></select></div>
         <div class="filter-divider"></div>
-        <div class="filter-group">
-          <span class="filter-label">État</span>
-          <select class="filter-select" id="filterState"><option value="">Tous</option></select>
-        </div>
-        <div class="search-wrapper">
-          <span class="search-icon">⌕</span>
-          <input type="text" class="search-input" id="searchInput" placeholder="Rechercher…">
-        </div>
+        <div class="filter-group"><span class="filter-label">État</span><select class="filter-select" id="filterState"><option value="">Tous</option></select></div>
+        <div class="search-wrapper"><span class="search-icon">⌕</span><input type="text" class="search-input" id="searchInput" placeholder="Rechercher…"></div>
         <span class="filter-count" id="filterCount"></span>
       </div>
 
@@ -258,44 +105,45 @@
         <table class="bugs-table">
           <thead>
             <tr>
-              <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
-              <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-              <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
-              <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+              <th class="col-select"><input type="checkbox" id="selectAll" class="row-checkbox"></th>
+              <th class="col-type"     data-sort="type">Type <span class="sort-arrow">↕</span></th>
+              <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+              <th class="col-id"       data-sort="id">ID <span class="sort-arrow">↕</span></th>
+              <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
               <th class="col-description">Description</th>
-              <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
-              <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
+              <th class="col-state"    data-sort="state">État <span class="sort-arrow">↕</span></th>
+              <th class="col-assignee">👤</th>
+              <th class="col-due"      data-sort="due_date">Échéance <span class="sort-arrow">↕</span></th>
+              <th class="col-date"     data-sort="date">Créé <span class="sort-arrow">↕</span></th>
               <th class="col-actions">Actions</th>
             </tr>
           </thead>
           <tbody id="bugsTableBody">
-            <tr id="loadingRow">
-              <td colspan="8" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px;">
-                <span style="opacity:.5">Chargement…</span>
-              </td>
-            </tr>
+            <tr id="loadingRow"><td colspan="11" style="text-align:center;padding:48px;color:var(--text-muted);"><span style="opacity:.5">Chargement…</span></td></tr>
           </tbody>
         </table>
         <div class="pagination" id="pagination"></div>
       </div>
     </div>
 
+    <!-- PANEL TIMELINE -->
+    <div id="panelTimeline" style="display:none;"></div>
+
     <!-- PANEL CONFIG -->
     <div id="panelConfig" style="display:none;">
-      <div class="config-hint">
-        💡 Modifiez les valeurs directement dans les champs, ajoutez ou supprimez des entrées, puis cliquez sur <strong>Sauvegarder</strong>. Les changements sont immédiatement disponibles dans le formulaire de mission.
-      </div>
+      <div class="config-hint">💡 Modifiez les valeurs, ajoutez ou supprimez des entrées, puis cliquez Sauvegarder.</div>
       <div class="config-grid">
         <div id="config-types"></div>
         <div id="config-categories"></div>
+        <div id="config-members"></div>
       </div>
     </div>
 
   </main>
 
-  <!-- MODAL CRÉATION / ÉDITION -->
+  <!-- MODAL MISSION -->
   <div class="modal-overlay hidden" id="modalOverlay">
-    <div class="modal">
+    <div class="modal" style="max-width:660px;">
       <div class="modal-header">
         <span class="modal-title" id="modalTitle">Nouvelle mission</span>
         <button class="modal-close" onclick="BO.closeModal()">×</button>
@@ -303,41 +151,29 @@
       <div class="modal-body">
         <input type="hidden" id="editId">
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Type *</label>
-            <select class="form-select" id="fType"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Catégorie *</label>
-            <select class="form-select" id="fCategory"></select>
-          </div>
+          <div class="form-group"><label class="form-label">Type *</label><select class="form-select" id="fType"></select></div>
+          <div class="form-group"><label class="form-label">Catégorie *</label><select class="form-select" id="fCategory"></select></div>
         </div>
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Priorité *</label>
-            <select class="form-select" id="fPriority"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">État *</label>
-            <select class="form-select" id="fState"></select>
-          </div>
+          <div class="form-group"><label class="form-label">Priorité *</label><select class="form-select" id="fPriority"></select></div>
+          <div class="form-group"><label class="form-label">État *</label><select class="form-select" id="fState"></select></div>
         </div>
         <div class="form-row">
-          <div class="form-group full-width">
-            <label class="form-label">Titre *</label>
-            <input type="text" class="form-input" id="fTitle" placeholder="Résumé court de la mission…">
-          </div>
+          <div class="form-group"><label class="form-label">Assigné à</label><select class="form-select" id="fAssignee"></select></div>
+          <div class="form-group"><label class="form-label">Date d'échéance</label><input type="date" class="form-input" id="fDueDate"></div>
         </div>
         <div class="form-row">
-          <div class="form-group full-width">
-            <label class="form-label">Description *</label>
-            <textarea class="form-textarea" id="fDescription" placeholder="Description détaillée, étapes de reproduction…"></textarea>
-          </div>
+          <div class="form-group full-width"><label class="form-label">Titre *</label><input type="text" class="form-input" id="fTitle" placeholder="Résumé court de la mission…"></div>
         </div>
         <div class="form-row">
+          <div class="form-group full-width"><label class="form-label">Description *</label><textarea class="form-textarea" id="fDescription" placeholder="Description détaillée…"></textarea></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Date d'arrivée *</label><input type="date" class="form-input" id="fDate"></div>
           <div class="form-group">
-            <label class="form-label">Date d'arrivée *</label>
-            <input type="date" class="form-input" id="fDate">
+            <label class="form-label">Bloque ces missions</label>
+            <select class="form-select" id="fBlocks" multiple style="height:70px;" onchange="BO.updateBlocksPreview()"></select>
+            <div class="blocks-list" id="blocksPreview" style="margin-top:6px;"></div>
           </div>
         </div>
       </div>
@@ -351,14 +187,10 @@
   <!-- MODAL SUPPRESSION -->
   <div class="modal-overlay hidden" id="confirmOverlay">
     <div class="modal" style="max-width:420px;">
-      <div class="modal-header">
-        <span class="modal-title">Confirmer la suppression</span>
-        <button class="modal-close" onclick="BO.closeConfirm()">×</button>
-      </div>
+      <div class="modal-header"><span class="modal-title">Confirmer la suppression</span><button class="modal-close" onclick="BO.closeConfirm()">×</button></div>
       <div class="modal-body">
-        <p style="color:var(--text-muted);margin-bottom:8px;">Vous êtes sur le point de supprimer :</p>
+        <p style="color:var(--text-muted);margin-bottom:8px;">Vous allez supprimer définitivement :</p>
         <p style="color:var(--text-bright);font-weight:500;" id="confirmBugTitle"></p>
-        <p style="color:var(--text-muted);margin-top:10px;font-size:12px;">Cette action est irréversible en base de données.</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="BO.closeConfirm()">Annuler</button>
@@ -367,24 +199,34 @@
     </div>
   </div>
 
-  <!-- MODALE COMMENTAIRES -->
+  <!-- MODAL COMMENTAIRES -->
   <div class="modal-overlay hidden" id="commentsModal">
     <div class="modal" style="max-width:560px;">
       <div class="modal-header">
-        <div>
-          <div class="modal-title" id="commentsModalTitle"></div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:DM Mono,monospace;" id="commentsBugId"></div>
-        </div>
+        <div><div class="modal-title" id="commentsModalTitle"></div><div style="font-size:11px;color:var(--text-muted);margin-top:3px;font-family:'DM Mono',monospace;" id="commentsBugId"></div></div>
         <button class="modal-close" onclick="BO.closeComments()">×</button>
       </div>
       <div class="modal-body" style="padding:0;">
-        <div id="commentsList" style="max-height:300px;overflow-y:auto;padding:16px 24px;"></div>
+        <div id="commentsList" style="max-height:280px;overflow-y:auto;padding:16px 24px;"></div>
         <div class="comment-form">
           <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Ajouter un commentaire</div>
           <input type="text" class="form-input" id="commentAuthor" placeholder="Votre nom…" style="margin-bottom:8px;">
           <textarea class="form-textarea" id="commentContent" placeholder="Votre commentaire…" style="min-height:72px;margin-bottom:10px;"></textarea>
           <button class="btn btn-primary" id="btnSubmitComment" onclick="BO.submitComment()" style="width:100%;justify-content:center;">Publier</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HISTORIQUE -->
+  <div class="modal-overlay hidden" id="historyModal">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <span class="modal-title" id="historyTitle">Historique</span>
+        <button class="modal-close" onclick="BO.closeHistory()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="historyList" style="max-height:420px;overflow-y:auto;"></div>
       </div>
     </div>
   </div>
