@@ -29,6 +29,14 @@ const Front = {
     this.bindEvents();
     this.renderStats();
     this.render();
+    // Realtime
+    if (typeof Realtime !== 'undefined') {
+      Realtime.subscribe('bugs', {
+        onInsert: (rec) => { this.renderStats(); if(this.view==='list') this.renderList(); Realtime.notify('Nouvelle mission : ' + rec.title, 'info'); },
+        onUpdate: (rec) => { this.renderStats(); if(this.view==='list') this.renderList(); },
+        onDelete: ()    => { this.renderStats(); if(this.view==='list') this.renderList(); }
+      });
+    }
   },
 
   loadTheme() {

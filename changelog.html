@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Post — Changelog</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8a030">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .cl-timeline { position: relative; padding-left: 28px; }
+    .cl-timeline::before {
+      content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px;
+      width: 1px; background: linear-gradient(to bottom, var(--gold-dim), var(--border-dim));
+    }
+    .cl-entry {
+      position: relative; margin-bottom: 32px;
+      animation: rowIn 0.25s ease both;
+    }
+    .cl-entry::before {
+      content: ''; position: absolute; left: -24px; top: 10px;
+      width: 9px; height: 9px; border-radius: 50%;
+      border: 2px solid var(--bg-surface);
+      background: var(--gold-dim);
+    }
+    .cl-entry.critical::before { background: var(--p-critical); box-shadow: 0 0 6px rgba(255,82,82,0.4); }
+    .cl-entry.resolved::before { background: var(--s-resolved); }
+    .cl-entry.new::before      { background: var(--s-new); }
+
+    .cl-date {
+      font-family: 'DM Mono', monospace; font-size: 11px;
+      color: var(--text-faint); margin-bottom: 8px;
+    }
+    .cl-card {
+      background: var(--bg-surface); border: 1px solid var(--border-base);
+      border-radius: var(--r-lg); padding: 14px 16px;
+      transition: border-color 0.15s;
+    }
+    .cl-card:hover { border-color: var(--border-strong); }
+
+    .cl-card-top {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 10px; margin-bottom: 6px;
+    }
+    .cl-title { font-size: 13px; font-weight: 600; color: var(--text-bright); }
+    .cl-meta  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .cl-change {
+      font-size: 12px; color: var(--text-muted); margin-top: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .cl-old { text-decoration: line-through; opacity: 0.5; }
+    .cl-arrow { color: var(--text-faint); }
+    .cl-new { font-weight: 600; color: var(--text-bright); }
+
+    .cl-filters {
+      display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+    }
+    .cl-filter-btn {
+      padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      font-family: 'DM Sans', sans-serif; cursor: pointer;
+      background: var(--bg-raised); border: 1px solid var(--border-base);
+      color: var(--text-muted); transition: all 0.15s;
+    }
+    .cl-filter-btn:hover { color: var(--text-bright); border-color: var(--border-strong); }
+    .cl-filter-btn.active { background: var(--gold-ghost); border-color: var(--gold-dim); color: var(--gold-bright); }
+
+    .cl-empty { text-align: center; padding: 60px 20px; color: var(--text-faint); font-size: 13px; }
+    .cl-load-more {
+      display: block; width: 100%; padding: 10px;
+      background: var(--bg-raised); border: 1px solid var(--border-base);
+      border-radius: var(--r-md); color: var(--text-muted);
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; text-align: center; transition: all 0.15s; margin-top: 8px;
+    }
+    .cl-load-more:hover { color: var(--text-bright); border-color: var(--border-strong); background: var(--bg-hover); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>
+    <nav class="header-nav">
+      <a href="index.html">Mission Board</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="changelog.html" class="active">Changelog</a>
+      <a href="requests.html">Demandes</a>
+      <a href="archives.html">Archives</a>
+      <button class="theme-btn" id="themeToggle" title="Thème">☀️</button>
+      <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <div class="page-header">
+      <h1>Changelog</h1>
+      <p>Historique des modifications récentes — missions créées, résolues, changements d'état et de priorité.</p>
+    </div>
+
+    <div class="cl-filters">
+      <button class="cl-filter-btn active" data-filter="all"    onclick="CL.filter('all')">Tout</button>
+      <button class="cl-filter-btn"        data-filter="new"    onclick="CL.filter('new')">✦ Nouvelles missions</button>
+      <button class="cl-filter-btn"        data-filter="state"  onclick="CL.filter('state')">↻ Changements d'état</button>
+      <button class="cl-filter-btn"        data-filter="resolved" onclick="CL.filter('resolved')">✓ Résolues</button>
+      <button class="cl-filter-btn"        data-filter="critical" onclick="CL.filter('critical')">⚠ Critiques</button>
+    </div>
+
+    <div id="clList">
+      <div class="cl-empty">Chargement…</div>
+    </div>
+  </main>
+
+  <script src="cache.js"></script>
+  <script src="supabase.js"></script>
+  <script>
+  const CL = {
+    all: [],
+    displayed: 20,
+    currentFilter: 'all',
+
+    async init() {
+      this.loadTheme();
+      document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
+      try {
+        // Charger l'historique complet + bugs pour enrichissement
+        const [history, bugs] = await Promise.all([
+          this.fetchHistory(),
+          DB.fetchBugs()
+        ]);
+        this.bugs = bugs;
+        this.all  = this.enrich(history, bugs);
+      } catch(e) {
+        document.getElementById('clList').innerHTML = '<div class="cl-empty">Erreur de chargement.</div>';
+        return;
+      }
+      this.render();
+    },
+
+    async fetchHistory() {
+      const res = await fetch(
+        'https://pmrmeivebuvyynmehyhh.supabase.co/rest/v1/history?order=created_at.desc&limit=200',
+        { headers: {
+          'apikey': 'sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-',
+          'Authorization': 'Bearer sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-'
+        }}
+      );
+      if (!res.ok) throw new Error('History fetch error');
+      return res.json();
+    },
+
+    enrich(history, bugs) {
+      return history.map(h => {
+        const bug = bugs.find(b => b.id === h.bug_id) || {};
+        return { ...h, bugTitle: bug.title || h.bug_id, bugPriority: bug.priority, bugCategory: bug.category };
+      });
+    },
+
+    filter(f) {
+      this.currentFilter = f;
+      this.displayed = 20;
+      document.querySelectorAll('.cl-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === f);
+      });
+      this.render();
+    },
+
+    getFiltered() {
+      return this.all.filter(h => {
+        if (this.currentFilter === 'all')      return true;
+        if (this.currentFilter === 'new')      return h.field === 'création';
+        if (this.currentFilter === 'state')    return h.field === 'state';
+        if (this.currentFilter === 'resolved') return h.field === 'state' && (h.new_value === 'Résolu' || h.new_value === 'Fermé');
+        if (this.currentFilter === 'critical') return h.bugPriority === 'Critique';
+        return true;
+      });
+    },
+
+    render() {
+      const filtered = this.getFiltered();
+      const el       = document.getElementById('clList');
+
+      if (!filtered.length) {
+        el.innerHTML = '<div class="cl-empty">Aucune entrée pour ce filtre.</div>';
+        return;
+      }
+
+      const items = filtered.slice(0, this.displayed);
+      const hasMore = filtered.length > this.displayed;
+
+      el.innerHTML = '<div class="cl-timeline">' +
+        items.map(h => this.renderEntry(h)).join('') +
+      '</div>' +
+      (hasMore ? `<button class="cl-load-more" onclick="CL.loadMore()">Afficher plus (${filtered.length - this.displayed} restants)</button>` : '');
+    },
+
+    renderEntry(h) {
+      const d  = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const ts = s => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+
+      let cls = '';
+      if (h.field === 'création') cls = 'new';
+      else if (h.new_value === 'Résolu' || h.new_value === 'Fermé') cls = 'resolved';
+      else if (h.bugPriority === 'Critique') cls = 'critical';
+
+      const fieldLabels = {
+        'création': '✦ Nouvelle mission',
+        'state':    '↻ État modifié',
+        'priority': '● Priorité modifiée',
+        'assignee': '👤 Assignation',
+        'archived': '📦 Archivé',
+        'due_date': '📅 Échéance',
+      };
+      const fieldLabel = fieldLabels[h.field] || h.field;
+
+      const changeHtml = h.field !== 'création'
+        ? `<div class="cl-change">
+            <span class="cl-old">${d(h.old_value || '—')}</span>
+            <span class="cl-arrow">→</span>
+            <span class="cl-new">${h.field === 'state'
+              ? `<span class="badge badge-state-${ts(h.new_value)}" style="font-size:10px;"><span class="badge-dot"></span>${d(h.new_value)}</span>`
+              : d(h.new_value || '—')
+            }</span>
+           </div>`
+        : '';
+
+      return `<div class="cl-entry ${cls}">
+        <div class="cl-date">${this.fmtDatetime(h.created_at)}</div>
+        <div class="cl-card">
+          <div class="cl-card-top">
+            <div>
+              <div class="cl-title">${d(h.bugTitle)}</div>
+              <div class="cl-meta">
+                <span class="bug-id" style="font-size:11px;">${d(h.bug_id)}</span>
+                ${h.bugCategory ? `<span class="badge badge-cat-${ts(h.bugCategory)}" style="font-size:10px;">${d(h.bugCategory)}</span>` : ''}
+                ${h.bugPriority ? `<span class="badge badge-prio-${ts(h.bugPriority)}" style="font-size:10px;"><span class="badge-dot"></span>${d(h.bugPriority)}</span>` : ''}
+              </div>
+            </div>
+            <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${d(fieldLabel)}</span>
+          </div>
+          ${changeHtml}
+          <div style="font-size:11px;color:var(--text-faint);margin-top:6px;">par ${d(h.author)}</div>
+        </div>
+      </div>`;
+    },
+
+    loadMore() {
+      this.displayed += 20;
+      this.render();
+    },
+
+    loadTheme() {
+      const t = localStorage.getItem('cp_theme') || 'dark';
+      document.body.classList.toggle('light', t === 'light');
+      const btn = document.getElementById('themeToggle');
+      if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
+    },
+    toggleTheme() {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('cp_theme', isLight ? 'light' : 'dark');
+      const btn = document.getElementById('themeToggle');
+      if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+    },
+    fmtDatetime(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    }
+  };
+  document.addEventListener('DOMContentLoaded', () => CL.init());
+  </script>
+</body>
+</html>

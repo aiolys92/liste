@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Command Post</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8a030">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,6 +17,7 @@
     <nav class="header-nav">
       <a href="index.html" class="active">Mission Board</a>
       <a href="dashboard.html">Dashboard</a>
+      <a href="changelog.html">Changelog</a>
       <a href="requests.html">Demandes</a>
       <a href="archives.html">Archives</a>
       <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
@@ -132,7 +138,12 @@
   </div>
 
   <script src="resizable.js"></script>
+  <script src="cache.js"></script>
+  <script src="realtime.js"></script>
   <script src="supabase.js"></script>
+  <script src="search.js"></script>
+  <script src="shortcuts.js"></script>
   <script src="front.js"></script>
+  <script>document.addEventListener("DOMContentLoaded",()=>{Shortcuts.init("front");Shortcuts._ctx="front";});</script>
 </body>
 </html>

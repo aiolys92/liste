@@ -46,12 +46,16 @@ const DB = {
 
   // Stats pour dashboard (compte par état/priorité/catégorie)
   async fetchStats() {
+    const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.stats);
+    if (cached) return cached;
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at`,
       { headers: SUPABASE_HEADERS }
     );
     if (!res.ok) throw new Error(`Stats error ${res.status}`);
-    return res.json();
+    const data = await res.json();
+    if (typeof Cache !== 'undefined') Cache.set(Cache.keys.stats, data);
+    return data;
   },
 
   async fetchArchived() {
@@ -76,6 +80,7 @@ const DB = {
       method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Update error ${res.status}`); }
+    if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.stats);
     return res.json();
   },
 
@@ -92,9 +97,13 @@ const DB = {
 
   /* ---- MEMBERS ---- */
   async fetchMembers() {
+    const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.members);
+    if (cached) return cached;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/members?order=name.asc`, { headers: SUPABASE_HEADERS });
     if (!res.ok) throw new Error(`Members fetch error ${res.status}`);
-    return res.json();
+    const data = await res.json();
+    if (typeof Cache !== 'undefined') Cache.set(Cache.keys.members, data);
+    return data;
   },
 
   async insertMember(data) {
@@ -102,6 +111,7 @@ const DB = {
       method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Member insert error ${res.status}`); }
+    if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.members);
     return res.json();
   },
 
@@ -110,6 +120,7 @@ const DB = {
       method: 'DELETE', headers: SUPABASE_HEADERS
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Member delete error ${res.status}`); }
+    if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.members);
     return true;
   },
 
@@ -161,12 +172,20 @@ const DB = {
 
   /* ---- CONFIG ---- */
   async fetchConfig() {
+    const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.config);
+    if (cached) return cached;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/config`, { headers: SUPABASE_HEADERS });
     if (!res.ok) throw new Error(`Config fetch error ${res.status}`);
     const rows = await res.json();
     const out = {};
     rows.forEach(r => { out[r.key] = r.values; });
+    if (typeof Cache !== 'undefined') Cache.set(Cache.keys.config, out);
     return out;
+  },
+
+  async updateConfigCached(key, values) {
+    await this.updateConfig(key, values);
+    if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.config);
   },
 
   async updateConfig(key, values) {

@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Command Post — Admin</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8a030">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="styles.css">
   <style>
     .selected-row { background: rgba(200,160,48,0.05) !important; }
@@ -367,7 +372,11 @@
   </div>
 
   <script src="resizable.js"></script>
+  <script src="cache.js"></script>
   <script src="supabase.js"></script>
+  <script src="search.js"></script>
+  <script src="shortcuts.js"></script>
   <script src="backoffice.js"></script>
+  <script>document.addEventListener("DOMContentLoaded",()=>{Shortcuts.init("backoffice");Shortcuts._ctx="backoffice";});</script>
 </body>
 </html>
