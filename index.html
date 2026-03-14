@@ -8,88 +8,79 @@
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="site-header">
-    <span class="header-title"><span class="header-title-icon">⬡</span>Bug Tracker</span>
+    <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Bug Tracker</a>
     <nav class="header-nav">
       <a href="index.html" class="active">Liste publique</a>
-      <a href="backoffice.html" class="btn-backoffice">⚙ Back-office</a>
+      <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
     </nav>
   </header>
 
-  <!-- MAIN -->
   <main class="main-container">
 
-    <!-- PAGE HEADER -->
     <div class="page-header">
       <h1>Rapports de bugs</h1>
       <p>Liste des anomalies, régressions et demandes d'amélioration recensées par la communauté.</p>
-      <div class="stats-row" id="statsRow">
-        <!-- Générées via JS -->
-      </div>
+      <div class="stats-row" id="statsRow"></div>
     </div>
 
-    <!-- FILTRES -->
+    <!-- Bannière d'erreur -->
+    <div id="errorBanner" style="display:none; background:rgba(255,82,82,0.1); border:1px solid rgba(255,82,82,0.3); border-radius:var(--r-md); color:var(--p-critical); padding:12px 18px; margin-bottom:16px; font-size:13px;"></div>
+
     <div class="filters-bar">
       <div class="filter-group">
         <span class="filter-label">Type</span>
-        <select class="filter-select" id="filterType">
-          <option value="">Tous</option>
-        </select>
+        <select class="filter-select" id="filterType"><option value="">Tous</option></select>
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">Catégorie</span>
-        <select class="filter-select" id="filterCategory">
-          <option value="">Toutes</option>
-        </select>
+        <select class="filter-select" id="filterCategory"><option value="">Toutes</option></select>
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">Priorité</span>
-        <select class="filter-select" id="filterPriority">
-          <option value="">Toutes</option>
-        </select>
+        <select class="filter-select" id="filterPriority"><option value="">Toutes</option></select>
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">État</span>
-        <select class="filter-select" id="filterState">
-          <option value="">Tous</option>
-        </select>
+        <select class="filter-select" id="filterState"><option value="">Tous</option></select>
       </div>
-      <div class="search-wrapper" style="margin-left: auto;">
+      <div class="search-wrapper">
         <span class="search-icon">⌕</span>
         <input type="text" class="search-input" id="searchInput" placeholder="Rechercher…">
       </div>
       <span class="filter-count" id="filterCount"></span>
     </div>
 
-    <!-- TABLE -->
     <div class="bugs-table-wrapper">
       <table class="bugs-table">
         <thead>
           <tr>
-            <th class="col-type" data-sort="type">Type <span class="sort-arrow">↕</span></th>
-            <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-            <th class="col-id" data-sort="id">ID <span class="sort-arrow">↕</span></th>
-            <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+            <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
+            <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+            <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
+            <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
             <th class="col-description">Description</th>
-            <th class="col-state" data-sort="state">État <span class="sort-arrow">↕</span></th>
-            <th class="col-date" data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
+            <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
+            <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
           </tr>
         </thead>
         <tbody id="bugsTableBody">
-          <!-- Généré via JS -->
+          <tr id="loadingRow">
+            <td colspan="7" style="text-align:center; padding:48px; color:var(--text-muted); font-size:13px;">
+              <span style="opacity:.5">Chargement…</span>
+            </td>
+          </tr>
         </tbody>
       </table>
-
-      <!-- PAGINATION -->
-      <div class="pagination" id="pagination">
-        <!-- Généré via JS -->
-      </div>
+      <div class="pagination" id="pagination"></div>
     </div>
 
   </main>
 
-  <script src="data.js"></script>
+  <script src="supabase.js"></script>
   <script src="front.js"></script>
 </body>
 </html>

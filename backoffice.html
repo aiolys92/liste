@@ -3,46 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Back-office – Bug Tracker Dofus</title>
+  <title>Back-office – Bug Tracker</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    /* Back-office specifics */
-    .backoffice-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(200, 168, 75, 0.1);
-      border: 1px solid rgba(200, 168, 75, 0.25);
-      border-radius: 4px;
-      padding: 2px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent-gold);
-      letter-spacing: 0.5px;
-    }
-
-    .col-actions { width: 110px; text-align: right; }
-  </style>
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="site-header">
-    <span class="header-title"><span class="header-title-icon">⬡</span>Bug Tracker <span class="backoffice-badge">⚙ Back-office</span></span>
+    <span class="header-title"><span class="header-title-icon">⬡</span>Bug Tracker <span class="backoffice-badge">⚙ Admin</span></span>
     <nav class="header-nav">
       <a href="index.html">← Vue publique</a>
+      <a href="#" onclick="BO.logout()" style="color:var(--p-critical);border-color:rgba(255,82,82,0.2);">Déconnexion</a>
     </nav>
   </header>
 
-  <!-- NOTIFICATION TOAST -->
-  <div class="notification hidden" id="notification">✓ Action effectuée</div>
+  <div class="notification hidden" id="notification"></div>
 
-  <!-- MAIN -->
   <main class="main-container">
 
-    <!-- PAGE HEADER -->
     <div class="page-header">
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div class="page-header-row">
         <div>
           <h1>Gestion des rapports</h1>
           <p>Ajoutez, modifiez ou supprimez les bugs signalés.</p>
@@ -54,54 +33,61 @@
       <div class="stats-row" id="statsRow"></div>
     </div>
 
-    <!-- FILTRES -->
     <div class="filters-bar">
       <div class="filter-group">
         <span class="filter-label">Type</span>
         <select class="filter-select" id="filterType"><option value="">Tous</option></select>
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">Catégorie</span>
         <select class="filter-select" id="filterCategory"><option value="">Toutes</option></select>
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">Priorité</span>
         <select class="filter-select" id="filterPriority"><option value="">Toutes</option></select>
       </div>
+      <div class="filter-divider"></div>
       <div class="filter-group">
         <span class="filter-label">État</span>
         <select class="filter-select" id="filterState"><option value="">Tous</option></select>
       </div>
-      <div class="search-wrapper" style="margin-left:auto;">
+      <div class="search-wrapper">
         <span class="search-icon">⌕</span>
         <input type="text" class="search-input" id="searchInput" placeholder="Rechercher…">
       </div>
       <span class="filter-count" id="filterCount"></span>
     </div>
 
-    <!-- TABLE -->
     <div class="bugs-table-wrapper">
       <table class="bugs-table">
         <thead>
           <tr>
-            <th class="col-type" data-sort="type">Type <span class="sort-arrow">↕</span></th>
-            <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-            <th class="col-id" data-sort="id">ID <span class="sort-arrow">↕</span></th>
-            <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+            <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
+            <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+            <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
+            <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
             <th class="col-description">Description</th>
-            <th class="col-state" data-sort="state">État <span class="sort-arrow">↕</span></th>
-            <th class="col-date" data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
+            <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
+            <th class="col-date"        data-sort="date">Arrivé le <span class="sort-arrow">↕</span></th>
             <th class="col-actions">Actions</th>
           </tr>
         </thead>
-        <tbody id="bugsTableBody"></tbody>
+        <tbody id="bugsTableBody">
+          <tr id="loadingRow">
+            <td colspan="8" style="text-align:center; padding:48px; color:var(--text-muted); font-size:13px;">
+              <span style="opacity:.5">Chargement…</span>
+            </td>
+          </tr>
+        </tbody>
       </table>
       <div class="pagination" id="pagination"></div>
     </div>
 
   </main>
 
-  <!-- MODAL AJOUT / MODIFICATION -->
+  <!-- MODAL CRÉATION / ÉDITION -->
   <div class="modal-overlay hidden" id="modalOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -110,7 +96,6 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="editId">
-
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Type *</label>
@@ -121,7 +106,6 @@
             <select class="form-select" id="fCategory"></select>
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Priorité *</label>
@@ -132,28 +116,24 @@
             <select class="form-select" id="fState"></select>
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group full-width">
             <label class="form-label">Titre *</label>
             <input type="text" class="form-input" id="fTitle" placeholder="Résumé court du bug…">
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group full-width">
             <label class="form-label">Description *</label>
-            <textarea class="form-textarea" id="fDescription" placeholder="Description détaillée, étapes de reproduction, conditions…"></textarea>
+            <textarea class="form-textarea" id="fDescription" placeholder="Description détaillée, étapes de reproduction…"></textarea>
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Date d'arrivée *</label>
             <input type="date" class="form-input" id="fDate">
           </div>
         </div>
-
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="BO.closeModal()">Annuler</button>
@@ -162,7 +142,7 @@
     </div>
   </div>
 
-  <!-- MODAL CONFIRMATION SUPPRESSION -->
+  <!-- MODAL SUPPRESSION -->
   <div class="modal-overlay hidden" id="confirmOverlay">
     <div class="modal" style="max-width:420px;">
       <div class="modal-header">
@@ -170,18 +150,18 @@
         <button class="modal-close" onclick="BO.closeConfirm()">×</button>
       </div>
       <div class="modal-body">
-        <p style="color:var(--text-secondary); margin-bottom:8px;">Vous êtes sur le point de supprimer le bug :</p>
-        <p style="color:var(--text-primary); font-weight:500;" id="confirmBugTitle"></p>
-        <p style="color:var(--text-secondary); margin-top:10px; font-size:12px;">Cette action est irréversible.</p>
+        <p style="color:var(--text-muted); margin-bottom:8px;">Vous êtes sur le point de supprimer :</p>
+        <p style="color:var(--text-bright); font-weight:500;" id="confirmBugTitle"></p>
+        <p style="color:var(--text-muted); margin-top:10px; font-size:12px;">Cette action est irréversible en base de données.</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="BO.closeConfirm()">Annuler</button>
-        <button class="btn btn-danger" onclick="BO.confirmDelete()">Supprimer</button>
+        <button class="btn btn-danger"    onclick="BO.confirmDelete()">Supprimer</button>
       </div>
     </div>
   </div>
 
-  <script src="data.js"></script>
+  <script src="supabase.js"></script>
   <script src="backoffice.js"></script>
 </body>
 </html>
