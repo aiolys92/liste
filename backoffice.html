@@ -70,6 +70,7 @@
       <button class="tab-btn tab-active" id="tabBugs"><span class="tab-icon">⚠</span>Missions</button>
       <button class="tab-btn" id="tabTimeline"><span class="tab-icon">📅</span>Timeline</button>
       <button class="tab-btn" id="tabConfig"><span class="tab-icon">⚙</span>Configuration</button>
+      <button class="tab-btn" id="tabRequests"><span class="tab-icon">📥</span>Demandes <span id="reqBadge" style="display:none;background:var(--p-critical);color:white;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;font-family:'DM Mono',monospace;"></span></button>
     </div>
 
     <!-- PANEL BUGS -->
@@ -140,6 +141,20 @@
     </div>
 
   </main>
+
+
+    <!-- PANEL DEMANDES -->
+    <div id="panelRequests" style="display:none;">
+
+      <!-- Sous-onglets -->
+      <div style="display:flex;gap:2px;background:var(--bg-raised);border:1px solid var(--border-base);border-radius:var(--r-lg);padding:4px;width:fit-content;margin-bottom:20px;">
+        <button class="tab-btn tab-active" id="reqTabPending"  onclick="BO.switchReqTab('pending')" ><span class="tab-icon">⏳</span>En attente <span id="reqTabCountPending"  style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-left:4px;"></span></button>
+        <button class="tab-btn"            id="reqTabAccepted" onclick="BO.switchReqTab('accepted')"><span class="tab-icon">✅</span>Acceptées  <span id="reqTabCountAccepted" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-left:4px;"></span></button>
+        <button class="tab-btn"            id="reqTabRejected" onclick="BO.switchReqTab('rejected')"><span class="tab-icon">✕</span>Refusées   <span id="reqTabCountRejected" style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted);margin-left:4px;"></span></button>
+      </div>
+
+      <div id="reqAdminList"></div>
+    </div>
 
   <!-- MODAL MISSION -->
   <div class="modal-overlay hidden" id="modalOverlay">
@@ -288,6 +303,45 @@
           <div><div class="action-modal-label">Supprimer</div><div class="action-modal-desc">Supprimer définitivement</div></div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODALE ACCEPTER DEMANDE -->
+  <div class="modal-overlay hidden" id="acceptModalOverlay">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <span class="modal-title">Accepter la demande</span>
+        <button class="modal-close" onclick="BO.closeAcceptModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Complétez les informations avant d'ajouter cette demande au Mission Board.</p>
+        <input type="hidden" id="acceptReqId">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Priorité *</label>
+            <select class="form-select" id="acceptPriority"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">État initial</label>
+            <select class="form-select" id="acceptState"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Assigné à</label>
+            <select class="form-select" id="acceptAssignee"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Date d'échéance</label>
+            <input type="date" class="form-input" id="acceptDueDate">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="BO.closeAcceptModal()">Annuler</button>
+        <button class="btn btn-primary"   onclick="BO.confirmAccept()">✅ Créer la mission</button>
       </div>
     </div>
   </div>

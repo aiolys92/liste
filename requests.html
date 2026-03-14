@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Post — Demandes</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ---- PAGE DEMANDES ---- */
+    .requests-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .requests-grid { grid-template-columns: 1fr; } }
+
+    /* Formulaire */
+    .request-form-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      position: sticky;
+      top: 76px;
+    }
+    .request-form-header {
+      background: var(--bg-raised);
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-base);
+      position: relative;
+    }
+    .request-form-header::after {
+      content: '';
+      position: absolute; inset: 0 0 auto 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    }
+    .request-form-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 18px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+    .request-form-subtitle { font-size: 12px; color: var(--text-muted); }
+    .request-form-body { padding: 20px 22px; }
+    .request-form-footer {
+      padding: 14px 22px 20px;
+      border-top: 1px solid var(--border-dim);
+    }
+
+    /* Liste des demandes publique */
+    .requests-list-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-base);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+    }
+    .requests-list-header {
+      background: var(--bg-raised);
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-base);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+    .requests-list-header::after {
+      content: '';
+      position: absolute; inset: 0 0 auto 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+    }
+    .requests-list-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text-bright);
+    }
+
+    /* Tabs statuts */
+    .req-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg-raised);
+      border-bottom: 1px solid var(--border-base);
+      padding: 6px 16px 0;
+    }
+    .req-tab {
+      padding: 7px 16px;
+      font-size: 12px; font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .req-tab:hover { color: var(--text-bright); }
+    .req-tab.active { color: var(--gold-bright); border-bottom-color: var(--gold-mid); }
+
+    /* Items demandes */
+    .request-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-dim);
+      transition: background 0.12s;
+      animation: rowIn 0.2s ease both;
+    }
+    .request-item:last-child { border-bottom: none; }
+    .request-item:hover { background: var(--bg-hover); }
+
+    .request-item-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .request-item-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-bright);
+      line-height: 1.4;
+    }
+    .request-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+    .request-item-author {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+    }
+    .request-item-date {
+      font-size: 11px;
+      color: var(--text-faint);
+      font-family: 'DM Mono', monospace;
+    }
+    .request-item-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-top: 5px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Badges statut */
+    .badge-status-pending  { background:rgba(255,208,64,0.12); color:var(--s-pending);  border:1px solid rgba(255,208,64,0.25); }
+    .badge-status-accepted { background:rgba(112,208,96,0.12); color:var(--s-resolved); border:1px solid rgba(112,208,96,0.25); }
+    .badge-status-rejected { background:rgba(255,82,82,0.12);  color:var(--p-critical); border:1px solid rgba(255,82,82,0.25); }
+
+    .empty-requests {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-faint);
+      font-size: 13px;
+    }
+
+    /* Confirmation envoi */
+    .send-success {
+      display: none;
+      text-align: center;
+      padding: 32px 20px;
+    }
+    .send-success-icon { font-size: 40px; margin-bottom: 14px; }
+    .send-success-title { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; color: var(--s-resolved); margin-bottom: 8px; letter-spacing: 1px; text-transform: uppercase; }
+    .send-success-text  { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>
+    <nav class="header-nav">
+      <a href="index.html">Mission Board</a>
+      <a href="requests.html" class="active">Demandes</a>
+      <a href="archives.html">Archives</a>
+      <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
+      <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
+    </nav>
+  </header>
+
+  <main class="main-container">
+
+    <div class="page-header">
+      <h1>Demandes</h1>
+      <p>Soumettez une demande de mission. L'équipe DA l'examinera et vous tiendra informé.</p>
+    </div>
+
+    <div class="requests-grid">
+
+      <!-- FORMULAIRE -->
+      <div class="request-form-card">
+        <div class="request-form-header">
+          <div class="request-form-title">Nouvelle demande</div>
+          <div class="request-form-subtitle">Décrivez votre besoin, nous reviendrons vers vous.</div>
+        </div>
+
+        <!-- Formulaire -->
+        <div id="formWrap">
+          <div class="request-form-body">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Votre nom *</label>
+              <input type="text" class="form-input" id="rName" placeholder="Prénom Nom…" maxlength="80">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Votre email *</label>
+              <input type="email" class="form-input" id="rEmail" placeholder="prenom@exemple.com">
+            </div>
+            <div class="form-row" style="margin-bottom:14px;">
+              <div class="form-group">
+                <label class="form-label">Type *</label>
+                <select class="form-select" id="rType"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Catégorie *</label>
+                <select class="form-select" id="rCategory"></select>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Titre *</label>
+              <input type="text" class="form-input" id="rTitle" placeholder="Résumé de votre demande…" maxlength="120">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description *</label>
+              <textarea class="form-textarea" id="rDescription" placeholder="Décrivez votre demande en détail…" style="min-height:110px;"></textarea>
+            </div>
+          </div>
+          <div class="request-form-footer">
+            <div id="formError" style="display:none;color:var(--p-critical);font-size:12px;margin-bottom:10px;"></div>
+            <button class="btn btn-primary" id="btnSubmitRequest" onclick="Requests.submit()" style="width:100%;justify-content:center;">
+              Soumettre la demande
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirmation -->
+        <div class="send-success" id="sendSuccess">
+          <div class="send-success-icon">✅</div>
+          <div class="send-success-title">Demande envoyée !</div>
+          <div class="send-success-text">Votre demande a bien été reçue. L'équipe DA l'examinera dans les meilleurs délais.</div>
+          <button class="btn btn-secondary" onclick="Requests.resetForm()" style="margin:0 auto;">Faire une autre demande</button>
+        </div>
+      </div>
+
+      <!-- LISTE PUBLIQUE -->
+      <div class="requests-list-card">
+        <div class="requests-list-header">
+          <span class="requests-list-title">Suivi des demandes</span>
+          <span class="config-section-count" id="reqCount">0</span>
+        </div>
+        <!-- Tabs -->
+        <div class="req-tabs">
+          <div class="req-tab active" id="tabPending"  onclick="Requests.switchTab('pending')">⏳ En attente</div>
+          <div class="req-tab"        id="tabAccepted" onclick="Requests.switchTab('accepted')">✅ Acceptées</div>
+          <div class="req-tab"        id="tabRejected" onclick="Requests.switchTab('rejected')">✕ Refusées</div>
+        </div>
+        <!-- Liste -->
+        <div id="reqList">
+          <div class="empty-requests">Chargement…</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="supabase.js"></script>
+  <script>
+  const Requests = {
+    all: [],
+    config: { types: [], categories: [] },
+    currentTab: 'pending',
+
+    async init() {
+      this.loadTheme();
+      document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
+      try {
+        const [requests, cfg] = await Promise.all([DB.fetchRequests(), DB.fetchConfig()]);
+        this.all = requests;
+        if (cfg.types)      this.config.types      = cfg.types;
+        if (cfg.categories) this.config.categories = cfg.categories;
+      } catch(e) { console.error(e); }
+      this.populateSelects();
+      this.renderList();
+    },
+
+    loadTheme() {
+      const t = localStorage.getItem('cp_theme') || 'dark';
+      document.body.classList.toggle('light', t === 'light');
+      const btn = document.getElementById('themeToggle');
+      if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
+    },
+    toggleTheme() {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('cp_theme', isLight ? 'light' : 'dark');
+      const btn = document.getElementById('themeToggle');
+      if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+    },
+
+    populateSelects() {
+      const sel = (id, arr) => {
+        const el = document.getElementById(id); if (!el) return;
+        el.innerHTML = arr.length
+          ? arr.map(v => `<option value="${this.esc(v)}">${this.esc(v)}</option>`).join('')
+          : '<option value="">— Aucune option —</option>';
+      };
+      sel('rType',     this.config.types);
+      sel('rCategory', this.config.categories);
+    },
+
+    switchTab(tab) {
+      this.currentTab = tab;
+      ['pending','accepted','rejected'].forEach(t => {
+        document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1))?.classList.toggle('active', t === tab);
+      });
+      this.renderList();
+    },
+
+    renderList() {
+      const filtered = this.all.filter(r => r.status === this.currentTab);
+      const el = document.getElementById('reqList');
+      const count = filtered.length;
+      document.getElementById('reqCount').textContent = this.all.filter(r=>r.status==='pending').length + ' en attente';
+
+      if (!count) {
+        const msgs = { pending:'Aucune demande en attente.', accepted:'Aucune demande acceptée.', rejected:'Aucune demande refusée.' };
+        el.innerHTML = `<div class="empty-requests">${msgs[this.currentTab]}</div>`;
+        return;
+      }
+
+      el.innerHTML = filtered.map(r => {
+        const statusLabel = { pending:'En attente', accepted:'Acceptée', rejected:'Refusée' }[r.status];
+        const statusCls   = `badge badge-status-${r.status}`;
+        return `<div class="request-item">
+          <div class="request-item-top">
+            <div class="request-item-title">${this.esc(r.title)}</div>
+            <span class="${statusCls}" style="white-space:nowrap;flex-shrink:0;"><span class="badge-dot"></span>${statusLabel}</span>
+          </div>
+          <div class="request-item-desc">${this.esc(r.description)}</div>
+          <div class="request-item-meta">
+            <span class="badge badge-type-${this.toSlug(r.type)}" style="font-size:10px;">${this.esc(r.type)}</span>
+            <span class="badge badge-cat-${this.toSlug(r.category)}" style="font-size:10px;">${this.esc(r.category)}</span>
+            <span class="request-item-author">👤 ${this.esc(r.author_name)}</span>
+            <span class="request-item-date">${this.fmtDate(r.created_at)}</span>
+          </div>
+        </div>`;
+      }).join('');
+    },
+
+    async submit() {
+      const name  = document.getElementById('rName').value.trim();
+      const email = document.getElementById('rEmail').value.trim();
+      const type  = document.getElementById('rType').value;
+      const cat   = document.getElementById('rCategory').value;
+      const title = document.getElementById('rTitle').value.trim();
+      const desc  = document.getElementById('rDescription').value.trim();
+      const errEl = document.getElementById('formError');
+
+      if (!name || !email || !type || !cat || !title || !desc) {
+        errEl.textContent = 'Veuillez remplir tous les champs.';
+        errEl.style.display = 'block'; return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'Email invalide.';
+        errEl.style.display = 'block'; return;
+      }
+      errEl.style.display = 'none';
+
+      const btn = document.getElementById('btnSubmitRequest');
+      btn.textContent = 'Envoi…'; btn.disabled = true;
+
+      try {
+        const created = await DB.insertRequest({
+          title, description: desc, category: cat, type,
+          author_name: name, author_email: email, status: 'pending'
+        });
+        const item = Array.isArray(created) ? created[0] : { title, description: desc, category: cat, type, author_name: name, status: 'pending', created_at: new Date().toISOString() };
+        this.all.unshift(item);
+        document.getElementById('formWrap').style.display = 'none';
+        document.getElementById('sendSuccess').style.display = 'block';
+        this.renderList();
+      } catch(e) {
+        errEl.textContent = 'Erreur : ' + e.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.textContent = 'Soumettre la demande'; btn.disabled = false;
+      }
+    },
+
+    resetForm() {
+      document.getElementById('formWrap').style.display = '';
+      document.getElementById('sendSuccess').style.display = 'none';
+      ['rName','rEmail','rTitle','rDescription'].forEach(id => { document.getElementById(id).value = ''; });
+    },
+
+    toSlug(str) { return String(str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,''); },
+    fmtDate(d)  { if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); },
+    esc(str)    { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  };
+
+  document.addEventListener('DOMContentLoaded', () => Requests.init());
+  </script>
+</body>
+</html>

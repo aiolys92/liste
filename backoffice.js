@@ -11,6 +11,8 @@ if (sessionStorage.getItem('bo_auth') !== 'ok') {
 const BO = {
   bugs: [],
   members: [],
+  requests: [],
+  currentReqTab: 'pending',
   config: {
     types:      [],
     categories: [],
@@ -39,7 +41,8 @@ const BO = {
     document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
     this.showLoading(true);
     try {
-      const [bugs, cfg, members] = await Promise.all([DB.fetchBugs(), DB.fetchConfig(), DB.fetchMembers()]);
+      const [bugs, cfg, members, requests] = await Promise.all([DB.fetchBugs(), DB.fetchConfig(), DB.fetchMembers(), DB.fetchRequests()]);
+      this.requests = requests;
       this.bugs    = bugs;
       this.members = members;
       if (cfg.types)      this.config.types      = cfg.types;
@@ -79,17 +82,19 @@ const BO = {
   // ============================================================
   bindTabEvents() {
     document.getElementById('tabBugs')?.addEventListener('click',    () => this.switchTab('bugs'));
-    document.getElementById('tabConfig')?.addEventListener('click',  () => this.switchTab('config'));
+    document.getElementById('tabConfig')?.addEventListener('click',   () => this.switchTab('config'));
+    document.getElementById('tabRequests')?.addEventListener('click', () => this.switchTab('requests'));
     document.getElementById('tabTimeline')?.addEventListener('click',() => this.switchTab('timeline'));
   },
 
   switchTab(tab) {
     this.activeTab = tab;
-    ['bugs','config','timeline'].forEach(t => {
+    ['bugs','config','timeline','requests'].forEach(t => {
       document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`)?.classList.toggle('tab-active', t===tab);
       document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`)?.style && (document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).style.display = t===tab?'':'none');
     });
     document.getElementById('btnNewBug').style.display = tab==='bugs' ? '' : 'none';
+    if (tab==='requests') this.renderRequestsTab();
     if (tab==='timeline') this.renderTimeline();
   },
 
@@ -160,6 +165,7 @@ const BO = {
     document.getElementById('historyModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('historyModal'))this.closeHistory();});
     document.getElementById('actionModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('actionModalOverlay'))this.closeActionModal();});
     document.getElementById('stateModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('stateModalOverlay'))this.closeStateModal();});
+    document.getElementById('acceptModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('acceptModalOverlay'))this.closeAcceptModal();});
   },
 
   bindBulkEvents() {

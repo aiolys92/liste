@@ -1660,3 +1660,39 @@ body.light .kanban-card { background: var(--bg-raised); }
 .state-modal-current {
   background: var(--gold-ghost);
 }
+
+/* ============================================
+   DEMANDES ADMIN
+   ============================================ */
+.request-admin-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-dim);
+  transition: background 0.12s;
+  animation: rowIn 0.2s ease both;
+}
+.request-admin-item:last-child { border-bottom: none; }
+.request-admin-item:hover { background: var(--bg-hover); }
+
+.request-admin-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.request-admin-info { flex: 1; min-width: 0; }
+
+.request-admin-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 7px;
+  line-height: 1.4;
+}
+
+.request-admin-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

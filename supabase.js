@@ -142,6 +142,39 @@ const DB = {
     return true;
   },
 
+
+  /* ---- REQUESTS ---- */
+  async fetchRequests(status = null) {
+    const filter = status ? `?status=eq.${status}&order=created_at.desc` : '?order=created_at.desc';
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/requests${filter}`, { headers: SUPABASE_HEADERS });
+    if (!res.ok) throw new Error(`Requests fetch error ${res.status}`);
+    return res.json();
+  },
+
+  async insertRequest(data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/requests`, {
+      method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Insert error ${res.status}`); }
+    return res.json();
+  },
+
+  async updateRequest(id, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/requests?id=eq.${id}`, {
+      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Update error ${res.status}`); }
+    return res.json();
+  },
+
+  async deleteRequest(id) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/requests?id=eq.${id}`, {
+      method: 'DELETE', headers: SUPABASE_HEADERS
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+    return true;
+  },
+
   /* ---- UTILS ---- */
   nextId(bugs) {
     if (!bugs.length) return 'MSN-001';
