@@ -104,19 +104,32 @@
 
       <div class="bugs-table-wrapper">
         <table class="bugs-table">
+          <colgroup>
+            <col style="width:36px">    <!-- Checkbox -->
+            <col style="width:88px">    <!-- Type -->
+            <col style="width:112px">   <!-- Catégorie -->
+            <col style="width:94px">    <!-- ID -->
+            <col>                       <!-- Description (espace restant) -->
+            <col style="width:106px">   <!-- Priorité -->
+            <col style="width:130px">   <!-- État -->
+            <col style="width:44px">    <!-- Assigné -->
+            <col style="width:96px">    <!-- Échéance -->
+            <col style="width:88px">    <!-- Créé -->
+            <col style="width:46px">    <!-- Actions -->
+          </colgroup>
           <thead>
             <tr>
-              <th class="col-select"><input type="checkbox" id="selectAll" class="row-checkbox"></th>
-              <th class="col-type"     data-sort="type">Type <span class="sort-arrow">↕</span></th>
-              <th class="col-category" data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
-              <th class="col-id"       data-sort="id">ID <span class="sort-arrow">↕</span></th>
-              <th class="col-priority" data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
-              <th class="col-description">Description</th>
-              <th class="col-state"    data-sort="state">État <span class="sort-arrow">↕</span></th>
-              <th class="col-assignee">👤</th>
-              <th class="col-due"      data-sort="due_date">Échéance <span class="sort-arrow">↕</span></th>
-              <th class="col-date"     data-sort="date">Créé <span class="sort-arrow">↕</span></th>
-              <th class="col-actions">Actions</th>
+              <th><input type="checkbox" id="selectAll" class="row-checkbox"></th>
+              <th data-sort="type">Type <span class="sort-arrow">↕</span></th>
+              <th data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
+              <th data-sort="id">ID <span class="sort-arrow">↕</span></th>
+              <th>Description</th>
+              <th data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
+              <th data-sort="state">État <span class="sort-arrow">↕</span></th>
+              <th style="text-align:center;">👤</th>
+              <th data-sort="due_date">Échéance <span class="sort-arrow">↕</span></th>
+              <th data-sort="date">Créé <span class="sort-arrow">↕</span></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="bugsTableBody">
