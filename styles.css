@@ -1253,3 +1253,72 @@ body.light .kanban-card { background: var(--bg-raised); }
 .col-assignee { width: 46px; text-align: center; }
 .col-due      { width: 100px; }
 .col-select   { width: 36px; }
+
+/* ============================================
+   BURGER MENU (3 points)
+   ============================================ */
+.action-menu-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.action-menu-btn {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-base);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.action-menu-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-bright);
+}
+
+.action-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  padding: 4px;
+  min-width: 170px;
+  z-index: 600;
+  box-shadow: var(--shadow-lg);
+  display: none;
+}
+.action-menu.open { display: block; animation: slideUp 0.15s ease; }
+
+.action-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-base);
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.action-menu-item:hover { background: var(--bg-hover); color: var(--text-bright); }
+.action-menu-item .action-menu-icon { font-size: 13px; width: 16px; text-align: center; }
+
+.action-menu-sep {
+  height: 1px;
+  background: var(--border-dim);
+  margin: 3px 4px;
+}
+
+.action-menu-item.danger { color: var(--p-critical); }
+.action-menu-item.danger:hover { background: rgba(255,82,82,0.1); color: var(--p-critical); }

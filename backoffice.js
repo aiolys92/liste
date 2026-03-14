@@ -26,6 +26,7 @@ const BO = {
   activeTab: 'bugs',
   selected: new Set(),
   openStateMenu: null,
+  openActionMenu: null,
 
   // ============================================================
   // INIT
@@ -55,6 +56,9 @@ const BO = {
     document.addEventListener('click', e => {
       if (this.openStateMenu && !e.target.closest('.state-dropdown-wrap')) {
         this.closeStateMenu();
+      }
+      if (this.openActionMenu && !e.target.closest('.action-menu-wrap')) {
+        this.closeActionMenu();
       }
     });
   },
@@ -262,13 +266,19 @@ const BO = {
       <td class="col-assignee">${avatarHtml}</td>
       <td class="col-due">${dueDateHtml}</td>
       <td class="col-date"><div class="date-main">${this.fmtDate(b.date)}</div></td>
-      <td class="col-actions"><div class="action-cell">
-        <button class="action-btn" onclick="BO.openComments('${d(b.id)}')" title="Commentaires">💬</button>
-        <button class="action-btn" onclick="BO.openHistory('${d(b.id)}')"  title="Historique">📋</button>
-        <button class="action-btn edit"    onclick="BO.openEdit('${d(b.id)}')">✏</button>
-        <button class="action-btn archive" onclick="BO.archiveMission('${d(b.id)}')" title="Archiver">📦</button>
-        <button class="action-btn delete"  onclick="BO.openDelete('${d(b.id)}')">✕</button>
-      </div></td>
+      <td class="col-actions">
+        <div class="action-menu-wrap">
+          <button class="action-menu-btn" onclick="BO.toggleActionMenu('${d(b.id)}',event)" title="Actions">···</button>
+          <div class="action-menu" id="am-${d(b.id)}">
+            <div class="action-menu-item" onclick="BO.openEdit('${d(b.id)}');BO.closeActionMenu()"><span class="action-menu-icon">✏</span>Modifier</div>
+            <div class="action-menu-item" onclick="BO.openComments('${d(b.id)}');BO.closeActionMenu()"><span class="action-menu-icon">💬</span>Commentaires</div>
+            <div class="action-menu-item" onclick="BO.openHistory('${d(b.id)}');BO.closeActionMenu()"><span class="action-menu-icon">📋</span>Historique</div>
+            <div class="action-menu-sep"></div>
+            <div class="action-menu-item" onclick="BO.archiveMission('${d(b.id)}');BO.closeActionMenu()"><span class="action-menu-icon">📦</span>Archiver</div>
+            <div class="action-menu-item danger" onclick="BO.openDelete('${d(b.id)}');BO.closeActionMenu()"><span class="action-menu-icon">✕</span>Supprimer</div>
+          </div>
+        </div>
+      </td>
     </tr>`;
   },
 
