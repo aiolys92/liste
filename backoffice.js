@@ -231,7 +231,7 @@ const BO = {
   // MODAL BUGS
   // ============================================================
   openCreate() {
-    document.getElementById('modalTitle').textContent = 'Nouveau rapport';
+    document.getElementById('modalTitle').textContent = 'Nouvelle mission';
     document.getElementById('editId').value = '';
     document.getElementById('fType').value     = this.config.types[0] || '';
     document.getElementById('fCategory').value = this.config.categories[0] || '';
@@ -320,7 +320,7 @@ const BO = {
   // ONGLET CONFIG
   // ============================================================
   renderConfigTab() {
-    this.renderConfigSection('types',      'Types de rapports',  'Ajouter un type…');
+    this.renderConfigSection('types',      'Types de missions',  'Ajouter un type…');
     this.renderConfigSection('categories', 'Catégories',         'Ajouter une catégorie…');
   },
 
@@ -371,7 +371,7 @@ const BO = {
     if (this.config[key].includes(val)) { this.showNotif(`"${val}" existe déjà.`, true); return; }
     this.config[key].push(val);
     input.value = '';
-    this.renderConfigSection(key, key==='types'?'Types de rapports':'Catégories', key==='types'?'Ajouter un type…':'Ajouter une catégorie…');
+    this.renderConfigSection(key, key==='types'?'Types de missions':'Catégories', key==='types'?'Ajouter un type…':'Ajouter une catégorie…');
   },
 
   editConfigItem(key, index, newVal) {
@@ -384,7 +384,7 @@ const BO = {
     const item = this.config[key][index];
     if (!confirm(`Supprimer "${item}" ? Les bugs qui l'utilisent ne seront pas modifiés.`)) return;
     this.config[key].splice(index, 1);
-    this.renderConfigSection(key, key==='types'?'Types de rapports':'Catégories', key==='types'?'Ajouter un type…':'Ajouter une catégorie…');
+    this.renderConfigSection(key, key==='types'?'Types de missions':'Catégories', key==='types'?'Ajouter un type…':'Ajouter une catégorie…');
   },
 
   async saveConfig(key) {
@@ -396,7 +396,7 @@ const BO = {
       this.populateFormSelects();
       this.showNotif(`✓ ${key==='types'?'Types':'Catégories'} sauvegardés`);
     } catch(e) { this.showNotif('Erreur : '+e.message, true); }
-    finally { btn.textContent = `💾 Sauvegarder les ${key==='types'?'types de rapports':'catégories'}`; btn.disabled=false; }
+    finally { btn.textContent = `💾 Sauvegarder les ${key==='types'?'types de missions':'catégories'}`; btn.disabled=false; }
   },
 
   // ============================================================
