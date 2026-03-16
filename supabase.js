@@ -20,28 +20,49 @@ const DB = {
   },
 
   // Pagination serveur — retourne { data, total }
+  _buildBugsQuery(filters={}, sort='date', dir='desc', includeArchived=false) {
+    let q = includeArchived ? '' : 'or=(archived.eq.false,archived.is.null)&';
+    if (filters.type)      q += `type=eq.${encodeURIComponent(filters.type)}&`;
+    if (filters.category)  q += `category=eq.${encodeURIComponent(filters.category)}&`;
+    if (filters.priority)  q += `priority=eq.${encodeURIComponent(filters.priority)}&`;
+    if (filters.state)     q += `state=eq.${encodeURIComponent(filters.state)}&`;
+    if (filters.client_id) q += `client_id=eq.${encodeURIComponent(filters.client_id)}&`;
+    if (filters.search)    q += `or=(title.ilike.*${encodeURIComponent(filters.search)}*,description.ilike.*${encodeURIComponent(filters.search)}*,id.ilike.*${encodeURIComponent(filters.search)}*)&`;
+    const validSort = ['date','id','priority','state','type','category','due_date'].includes(sort) ? sort : 'date';
+    q += `order=${validSort}.${dir==='asc'?'asc':'desc'}`;
+    return q;
+  },
+
   async fetchBugsPaged({ page=1, perPage=20, filters={}, sort='date', dir='desc', includeArchived=false } = {}) {
     const from  = (page-1)*perPage;
     const to    = from + perPage - 1;
-    const heads = { ...SUPABASE_HEADERS, 'Prefer': 'count=exact', 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
+    const q     = this._buildBugsQuery(filters, sort, dir, includeArchived);
 
-    let q = includeArchived ? '' : 'or=(archived.eq.false,archived.is.null)&';
-    if (filters.type)     q += `type=eq.${encodeURIComponent(filters.type)}&`;
-    if (filters.category) q += `category=eq.${encodeURIComponent(filters.category)}&`;
-    if (filters.priority) q += `priority=eq.${encodeURIComponent(filters.priority)}&`;
-    if (filters.state)    q += `state=eq.${encodeURIComponent(filters.state)}&`;
-    if (filters.client_id) q += `client_id=eq.${encodeURIComponent(filters.client_id)}&`;
-    if (filters.search)   q += `or=(title.ilike.*${encodeURIComponent(filters.search)}*,description.ilike.*${encodeURIComponent(filters.search)}*,id.ilike.*${encodeURIComponent(filters.search)}*)&`;
+    // Fetch data + count en parallèle
+    const dataHeaders  = { ...SUPABASE_HEADERS, 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
+    const countHeaders = { ...SUPABASE_HEADERS, 'Prefer': 'count=exact', 'Range': '0-0', 'Range-Unit': 'items' };
 
-    const sortDir = dir === 'asc' ? 'asc' : 'desc';
-    const validSort = ['date','id','priority','state','type','category','due_date'].includes(sort) ? sort : 'date';
-    q += `order=${validSort}.${sortDir}`;
+    const hasFilters = Object.values(filters).some(v => v);
+    const cacheKey   = hasFilters ? null : `bugs_count_p${page}`;
 
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: heads });
-    if (!res.ok) throw new Error(`Fetch paged error ${res.status}`);
-    const range = res.headers.get('Content-Range') || '';
-    const total = parseInt(range.split('/')[1]) || 0;
-    const data  = await res.json();
+    // Pour la page 1 sans filtres, utiliser le cache du count
+    let cachedCount = cacheKey && typeof Cache !== 'undefined' ? Cache.get(cacheKey) : null;
+
+    const [dataRes, countRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: dataHeaders }),
+      cachedCount !== null ? Promise.resolve(null) : fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: countHeaders })
+    ]);
+
+    if (!dataRes.ok) throw new Error(`Fetch paged error ${dataRes.status}`);
+    const data = await dataRes.json();
+
+    let total = cachedCount;
+    if (countRes) {
+      const range = countRes.headers.get('Content-Range') || '';
+      total = parseInt(range.split('/')[1]) || data.length;
+      if (cacheKey && typeof Cache !== 'undefined') Cache.set(cacheKey, total);
+    }
+
     return { data, total };
   },
 

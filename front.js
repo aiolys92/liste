@@ -19,26 +19,34 @@ const Front = {
     this.loadTheme();
     this.showLoading(true);
     try {
-      const [paged, cfg, members, clients] = await Promise.all([
-        DB.fetchBugsPaged({page:1, perPage:this.perPage}),
+      // 1. Charger bugs en priorité — afficher le tableau le plus vite possible
+      const paged = await DB.fetchBugsPaged({page:1, perPage:this.perPage});
+      this.bugs      = paged.data;
+      this.totalBugs = paged.total;
+      this.showLoading(false);
+      this.bindEvents();
+      this.renderStats();
+      this._skipNextFetch = true;
+      this.render();
+
+      // 2. Charger config/members/clients en arrière-plan
+      const [cfg, members, clients] = await Promise.all([
         DB.fetchConfig(),
         DB.fetchMembers(),
         DB.fetchClients()
       ]);
-      this.bugs      = paged.data;
-      this.totalBugs = paged.total;
-      this.members   = members;
-      this.clients   = clients;
+      this.members = members;
+      this.clients = clients;
       if (cfg.types)      this.config.types      = cfg.types;
       if (cfg.categories) this.config.categories = cfg.categories;
-    } catch(e) { this.showError('Impossible de charger les données.'); }
-    this.showLoading(false);
-    this.populateFilters();
-    this.bindEvents();
-    this.renderStats();
-    // Rendre directement avec les données déjà chargées, sans refaire la requête
-    this._skipNextFetch = true;
-    this.render();
+      // Re-rendre avec les membres/clients maintenant disponibles
+      this.populateFilters();
+      this._skipNextFetch = true;
+      this.render();
+    } catch(e) {
+      this.showLoading(false);
+      this.showError('Impossible de charger les données.');
+    }
     // Realtime
     if (typeof Realtime !== 'undefined') {
       Realtime.subscribe('bugs', {
