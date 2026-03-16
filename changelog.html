@@ -1,5 +1,4 @@
-
-    Header.init('changelog');<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -265,7 +264,7 @@
       </div>`;
     document.body.style.cssText = 'background:#080a0f;';
   } else {
-    document.addEventListener('DOMContentLoaded', () => CL.init());
+    document.addEventListener('DOMContentLoaded', () => { Header.init('changelog'); CL.init(); });
   }
   </script>
 </body>

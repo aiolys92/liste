@@ -1,5 +1,4 @@
-
-    Header.init('requests');<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -411,7 +410,7 @@
     esc(str)    { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   };
 
-  document.addEventListener('DOMContentLoaded', () => Requests.init());
+  document.addEventListener('DOMContentLoaded', () => { Header.init('requests'); Requests.init(); });
   </script>
 </body>
 </html>
