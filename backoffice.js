@@ -254,24 +254,38 @@ const BO = {
     });
   },
 
-  render() {
-    const filtered=this.getSorted(this.getFiltered());
-    const total=filtered.length;
-    const totalPages=Math.max(1,Math.ceil(total/this.itemsPerPage));
-    this.currentPage=Math.min(this.currentPage,totalPages);
-    const start=(this.currentPage-1)*this.itemsPerPage;
-    const page=filtered.slice(start,start+this.itemsPerPage);
-    document.getElementById('filterCount').textContent=`${total} résultat${total>1?'s':''}`;
-    document.querySelectorAll('[data-sort]').forEach(th=>{
-      th.classList.toggle('sorted',th.dataset.sort===this.sortField);
-      const arrow=th.querySelector('.sort-arrow');
-      if(arrow)arrow.textContent=th.dataset.sort===this.sortField?(this.sortDir==='asc'?'↑':'↓'):'↕';
+  async render() {
+    this.showLoading(true);
+    try {
+      const result = await DB.fetchBugsPaged({
+        page: this.currentPage,
+        perPage: this.perPage,
+        filters: this.filters,
+        sort: this.sortField,
+        dir: this.sortDir
+      });
+      this.bugs      = result.data;
+      this.totalBugs = result.total;
+    } catch(e) {
+      this.showNotif('Erreur chargement : ' + e.message, true);
+      this.showLoading(false);
+      return;
+    }
+    this.showLoading(false);
+    const total      = this.totalBugs;
+    const totalPages = Math.max(1, Math.ceil(total / this.perPage));
+    this.currentPage = Math.min(this.currentPage, totalPages);
+    document.getElementById('filterCount').textContent = `${total} résultat${total>1?'s':''}`;
+    document.querySelectorAll('[data-sort]').forEach(th => {
+      th.classList.toggle('sorted', th.dataset.sort === this.sortField);
+      const arrow = th.querySelector('.sort-arrow');
+      if (arrow) arrow.textContent = th.dataset.sort === this.sortField ? (this.sortDir==='asc'?'↑':'↓') : '↕';
     });
-    const tbody=document.getElementById('bugsTableBody');
-    tbody.innerHTML=page.length===0
-      ?`<tr><td colspan="12"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucune mission.</p></div></td></tr>`
-      :page.map(b=>this.renderRow(b)).join('');
-    this.renderPagination(total,totalPages);
+    const tbody = document.getElementById('bugsTableBody');
+    tbody.innerHTML = this.bugs.length === 0
+      ? `<tr><td colspan="12"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucune mission.</p></div></td></tr>`
+      : this.bugs.map(b => this.renderRow(b)).join('');
+    this.renderPagination(total, totalPages);
     this.selected.clear();
     this.updateBulkBar();
   },
