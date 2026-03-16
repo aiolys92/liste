@@ -2324,3 +2324,16 @@ body.light .kanban-card { background: var(--bg-raised); }
   overflow: hidden;
   position: relative;
 }
+
+/* Masquer le dot sur les badges d'état */
+.badge-state-nouveau .badge-dot,
+.badge-state-en-cours .badge-dot,
+.badge-state-resolu .badge-dot,
+.badge-state-résolu .badge-dot,
+.badge-state-ferme .badge-dot,
+.badge-state-fermé .badge-dot,
+.badge-state-rejete .badge-dot,
+.badge-state-rejeté .badge-dot,
+.badge-state-en-attente .badge-dot {
+  display: none;
+}
