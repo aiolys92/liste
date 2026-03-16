@@ -93,18 +93,6 @@ const BO = {
   // ============================================================
   // THEME
   // ============================================================
-  loadTheme() {
-    const t = localStorage.getItem('cp_theme') || 'dark';
-    document.body.classList.toggle('light', t === 'light');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
-  },
-  toggleTheme() {
-    const isLight = document.body.classList.toggle('light');
-    localStorage.setItem('cp_theme', isLight ? 'light' : 'dark');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = isLight ? '🌙' : '☀️';
-  },
 
   // ============================================================
   // TABS

@@ -116,9 +116,7 @@
     displayed: 20,
     currentFilter: 'all',
 
-    async init() {
-      this.loadTheme();
-=> this.toggleTheme());
+    async init() {=> this.toggleTheme());
       try {
         // Charger l'historique complet + bugs pour enrichissement
         const [history, bugs] = await Promise.all([

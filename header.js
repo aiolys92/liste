@@ -32,10 +32,6 @@ const Header = {
     header.innerHTML = this._render();
     document.body.insertAdjacentElement('afterbegin', header);
 
-    // Thème
-    this._applyTheme();
-    document.getElementById('themeToggle')?.addEventListener('click', () => this._toggleTheme());
-
     // Hamburger mobile
     this._initHamburger();
   },
@@ -56,8 +52,6 @@ const Header = {
       return `<a href="${l.href}"${active}>${l.label}</a>`;
     }).join('\n      ');
 
-    // Bouton thème
-    const themeBtn = `<button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>`;
 
     // Bouton droit (back-office ou déconnexion)
     const rightBtn = isAdmin
@@ -68,24 +62,11 @@ const Header = {
     ${logo}
     <nav class="header-nav" id="mainNav">
       ${links}
-      ${themeBtn}
       ${rightBtn}
     </nav>`;
   },
 
-  _applyTheme() {
-    const t = localStorage.getItem('cp_theme') || 'dark';
-    document.body.classList.toggle('light', t === 'light');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
-  },
 
-  _toggleTheme() {
-    const isLight = document.body.classList.toggle('light');
-    localStorage.setItem('cp_theme', isLight ? 'light' : 'dark');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = isLight ? '🌙' : '☀️';
-  },
 
   _initHamburger() {
     const nav = document.getElementById('mainNav');

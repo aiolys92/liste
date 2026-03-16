@@ -898,60 +898,10 @@ input[type="date"].form-input { color-scheme: dark; }
 /* ============================================
    THEME TOGGLE
    ============================================ */
-body.light {
-  --bg-root:       #f0ede6;
-  --bg-surface:    #e8e4dc;
-  --bg-raised:     #dedad0;
-  --bg-overlay:    #d4cfc4;
-  --bg-hover:      #ccc7bb;
-  --bg-active:     #c4bfb2;
-  --border-dim:    rgba(0,0,0,0.06);
-  --border-base:   rgba(0,0,0,0.10);
-  --border-strong: rgba(0,0,0,0.18);
-  --text-bright:   #1a1814;
-  --text-base:     #3a3530;
-  --text-muted:    #7a7060;
-  --text-faint:    #b0a898;
-  --gold-bright:   #9a7010;
-  --gold-mid:      #b88820;
-  --gold-dim:      #c8a030;
-  --gold-ghost:    rgba(180,130,20,0.10);
-  --blue-bright:   #1860a0;
-  --shadow-md:     0 4px 20px rgba(0,0,0,0.12);
-  --shadow-lg:     0 12px 48px rgba(0,0,0,0.18);
-}
 
-body.light .site-header {
-  background: rgba(240,237,230,0.92);
-}
 
-body.light .filter-select,
-body.light .search-input,
-body.light .form-input,
-body.light .form-select,
-body.light .form-textarea {
-  background: var(--bg-raised);
-  color: var(--text-bright);
-}
 
-body.light .bugs-table thead th { background: var(--bg-raised); }
-body.light .bugs-table tbody tr:hover { background: var(--bg-hover); }
-body.light .modal { background: var(--bg-overlay); }
-body.light .kanban-col { background: var(--bg-surface); }
-body.light .kanban-card { background: var(--bg-raised); }
 
-.theme-btn {
-  background: var(--bg-raised);
-  border: 1px solid var(--border-base);
-  border-radius: var(--r-sm);
-  color: var(--text-muted);
-  padding: 6px 10px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.18s;
-  line-height: 1;
-}
-.theme-btn:hover { color: var(--text-bright); border-color: var(--border-strong); }
 
 /* ============================================
    ASSIGNEE AVATAR
@@ -2474,21 +2424,8 @@ body.light .kanban-card { background: var(--bg-raised); }
   .header-nav.nav-open { display: flex; }
 
   .header-nav a,
-  .header-nav button.theme-btn {
-    padding: 10px 14px;
-    border-radius: var(--r-md);
-    border: 1px solid transparent;
-    width: 100%;
-    text-align: left;
-    font-size: 14px;
-    display: block;
-  }
-  .header-nav a:hover,
-  .header-nav button.theme-btn:hover {
-    background: var(--bg-hover);
-    border-color: var(--border-base);
-  }
-  .header-nav .btn-backoffice {
+  .header-nav button  .header-nav a:hover,
+  .header-nav button  .header-nav .btn-backoffice {
     margin-top: 4px;
     text-align: center;
   }
