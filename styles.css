@@ -572,7 +572,7 @@ input[type="date"].form-input { color-scheme: dark; }
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 280px);
+  max-height: calc(100vh - 240px);
   animation: rowIn 0.25s ease both;
 }
 
@@ -652,6 +652,7 @@ input[type="date"].form-input { color-scheme: dark; }
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
+  overflow-x: visible;
   flex: 1;
   scrollbar-width: thin;
   scrollbar-color: var(--bg-active) transparent;
@@ -675,10 +676,11 @@ input[type="date"].form-input { color-scheme: dark; }
   border: 1px solid var(--border-base);
   border-radius: var(--r-md);
   padding: 11px 12px;
-  cursor: default;
+  cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  height: auto;
   animation: rowIn 0.2s ease both;
 }
 
@@ -694,7 +696,7 @@ input[type="date"].form-input { color-scheme: dark; }
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
-  border-radius: 3px 0 0 3px;
+  border-radius: var(--r-md) 0 0 var(--r-md);
 }
 
 .kanban-card-prio-critique::before { background: var(--p-critical); box-shadow: 0 0 8px rgba(255,82,82,0.4); }
@@ -740,11 +742,8 @@ input[type="date"].form-input { color-scheme: dark; }
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.5;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   margin-bottom: 10px;
+  word-break: break-word;
 }
 
 .kanban-card-footer {
