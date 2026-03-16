@@ -291,25 +291,58 @@ const Front = {
   },
 
   renderKanbanCard(b) {
-    const ts=this.toSlug,d=this.esc.bind(this);
-    const member=this.members.find(m=>m.name===b.assignee);
-    const avatarHtml=member?`<span class="avatar" style="background:${member.color};width:20px;height:20px;font-size:9px;" title="${d(member.name)}">${d(member.initials)}</span>`:'';
-    const dueHtml=this.renderDueDate(b.due_date,b.state);
-    return `<div class="kanban-card kanban-card-prio-${ts(b.priority)}">
+    const ts=this.toSlug, d=this.esc.bind(this);
+    const member = this.members.find(m=>m.name===b.assignee);
+    const avatarHtml = member
+      ? `<span class="avatar" style="background:${member.color};width:20px;height:20px;font-size:9px;flex-shrink:0;" title="${d(member.name)}">${d(member.initials)}</span>`
+      : '';
+    const dueHtml = this.renderDueDate(b.due_date, b.state);
+    const blocksHtml = b.blocks?.length
+      ? `<span class="kanban-card-blocks">🔗 ${b.blocks.length}</span>` : '';
+    const versionHtml = b.target_version
+      ? `<span class="kanban-card-version">v${d(b.target_version)}</span>` : '';
+    const refHtml = b.ref_url
+      ? `<a class="kanban-card-link" href="${d(b.ref_url)}" target="_blank"
+           onclick="event.stopPropagation()" title="Lien de référence">🔗 Ref</a>` : '';
+
+    return `<div class="kanban-card kanban-card-prio-${ts(b.priority)}"
+      onclick="Front.openDetail('${d(b.id)}')"
+      style="transition:transform 0.15s,box-shadow 0.15s;">
+
+      <!-- En-tête : type + ID + priorité -->
       <div class="kanban-card-top">
-        <span class="kanban-card-id">${d(b.id)}</span>
-        <span class="badge badge-prio-${ts(b.priority)} kanban-card-prio-badge"><span class="badge-dot"></span>${d(b.priority)}</span>
+        <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+          <span class="kanban-card-type">${d(b.type)}</span>
+          <span class="kanban-card-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)"
+            title="Copier l'ID" style="cursor:pointer;">${d(b.id)}</span>
+        </div>
+        <span class="badge badge-prio-${ts(b.priority)} kanban-card-prio-badge">${d(b.priority)}</span>
       </div>
+
+      <!-- Titre -->
       <div class="kanban-card-title">${d(b.title)}</div>
+
+      <!-- Description complète -->
       <div class="kanban-card-desc">${d(b.description)}</div>
-      <div class="kanban-card-footer">
-        <span class="badge badge-state-${ts(b.state)} kanban-card-state"><span class="badge-dot"></span>${d(b.state)}</span>
-        <div style="display:flex;align-items:center;gap:5px;">
+
+      <!-- État + assigné + échéance -->
+      <div class="kanban-card-footer" style="margin-top:8px;">
+        <span class="badge badge-state-${ts(b.state)} kanban-card-state">${d(b.state)}</span>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
           ${avatarHtml}
           ${dueHtml}
-          <button class="comments-btn" onclick="Front.openComments('${d(b.id)}')" style="font-size:11px;padding:2px 5px;">💬</button>
         </div>
       </div>
+
+      <!-- Méta : version, blocs, lien, commentaires -->
+      <div class="kanban-card-meta">
+        ${versionHtml}
+        ${blocksHtml}
+        ${refHtml}
+        <button class="comments-btn" style="font-size:11px;padding:2px 6px;margin-left:auto;"
+          onclick="event.stopPropagation();Front.openComments('${d(b.id)}')">💬</button>
+      </div>
+
     </div>`;
   },
 

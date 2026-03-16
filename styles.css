@@ -2382,3 +2382,61 @@ body.light .kanban-card { background: var(--bg-raised); }
   white-space: nowrap;
 }
 .version-badge::before { content: 'v'; opacity: 0.6; }
+
+/* ============================================
+   KANBAN CARD — version enrichie
+   ============================================ */
+.kanban-card {
+  cursor: pointer;
+}
+
+.kanban-card-type {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.kanban-card-version {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--blue-bright);
+  background: rgba(80,184,255,0.1);
+  border: 1px solid rgba(80,184,255,0.2);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.kanban-card-link {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s;
+}
+.kanban-card-link:hover { color: var(--blue-bright); }
+
+.kanban-card-blocks {
+  font-size: 10px;
+  color: var(--p-critical);
+  background: rgba(255,82,82,0.08);
+  border: 1px solid rgba(255,82,82,0.2);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
