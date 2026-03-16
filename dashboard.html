@@ -7,6 +7,10 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8a030">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap"></noscript>
   <link rel="stylesheet" href="styles.css">
   <style>
     /* ============================================
@@ -158,17 +162,6 @@
 </head>
 <body>
 
-  <header class="site-header">
-    <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>
-    <nav class="header-nav">
-      <a href="index.html">Mission Board</a>
-      <a href="dashboard.html" class="active">Dashboard</a>
-      <a href="requests.html">Demandes</a>
-      <a href="archives.html">Archives</a>
-      <button class="theme-btn" id="themeToggle" title="Thème">☀️</button>
-      <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
-    </nav>
-  </header>
 
   <main class="main-container">
 
@@ -191,10 +184,11 @@
 
   </main>
 
+  <script src="header.js"></script>
   <script src="utils.js"></script>
   <script src="cache.js"></script>
   <script src="supabase.js"></script>
   <script src="dashboard.js"></script>
-  <script>document.addEventListener('DOMContentLoaded', () => Dashboard.init(false));</script>
+  <script>document.addEventListener('DOMContentLoaded', () => { Header.init('dashboard'); Dashboard.init(false); });</script>
 </body>
 </html>

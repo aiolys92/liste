@@ -2035,55 +2035,6 @@ body.light .kanban-card { background: var(--bg-raised); }
 .action-toast.toast-warn  .toast-dot { background: var(--p-medium); }
 
 /* ============================================
-   NAV HAMBURGER MOBILE
-   ============================================ */
-.nav-hamburger {
-  display: none;
-  background: var(--bg-raised);
-  border: 1px solid var(--border-base);
-  border-radius: var(--r-sm);
-  color: var(--text-muted);
-  padding: 6px 10px;
-  font-size: 16px;
-  cursor: pointer;
-  line-height: 1;
-  transition: all 0.15s;
-}
-.nav-hamburger:hover { color: var(--text-bright); border-color: var(--border-strong); }
-
-@media (max-width: 768px) {
-  .nav-hamburger { display: flex; align-items: center; }
-  .header-nav .nav-links {
-    display: none;
-    position: fixed;
-    top: 60px;
-    left: 0; right: 0;
-    background: rgba(8,10,15,0.97);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border-base);
-    padding: 12px 16px;
-    flex-direction: column;
-    gap: 4px;
-    z-index: 190;
-  }
-  .header-nav .nav-links.open { display: flex; }
-  .header-nav .nav-links a,
-  .header-nav .nav-links button {
-    padding: 10px 14px;
-    border-radius: var(--r-md);
-    border: 1px solid transparent;
-    width: 100%;
-    text-align: left;
-    font-size: 14px;
-  }
-  .header-nav .nav-links a:hover,
-  .header-nav .nav-links button:hover {
-    background: var(--bg-hover);
-    border-color: var(--border-base);
-  }
-}
-
-/* ============================================
    STATS MEMBRES — dashboard
    ============================================ */
 .db-members-grid {
@@ -2485,3 +2436,61 @@ body.light .kanban-card { background: var(--bg-raised); }
 .client-badge .client-badge-dot {
   display: none;
 }
+
+/* ============================================
+   NAV HAMBURGER MOBILE — header centralisé
+   ============================================ */
+.nav-hamburger {
+  display: none;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-base);
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  padding: 6px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  transition: all 0.15s;
+  order: 999;
+}
+.nav-hamburger:hover { color: var(--text-bright); border-color: var(--border-strong); }
+
+@media (max-width: 768px) {
+  .nav-hamburger { display: flex; align-items: center; }
+
+  .header-nav {
+    display: none;
+    position: fixed;
+    top: 60px; left: 0; right: 0;
+    background: rgba(8,10,15,0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-base);
+    padding: 10px 16px 14px;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 190;
+  }
+  .header-nav.nav-open { display: flex; }
+
+  .header-nav a,
+  .header-nav button.theme-btn {
+    padding: 10px 14px;
+    border-radius: var(--r-md);
+    border: 1px solid transparent;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+    display: block;
+  }
+  .header-nav a:hover,
+  .header-nav button.theme-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-base);
+  }
+  .header-nav .btn-backoffice {
+    margin-top: 4px;
+    text-align: center;
+  }
+}
+

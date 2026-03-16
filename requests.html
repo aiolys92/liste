@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+    Header.init('requests');<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -184,17 +185,6 @@
 </head>
 <body>
 
-  <header class="site-header">
-    <a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>
-    <nav class="header-nav">
-      <a href="index.html">Mission Board</a>
-      <a href="requests.html" class="active">Demandes</a>
-      <a href="dashboard.html">Dashboard</a>
-      <a href="archives.html">Archives</a>
-      <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
-      <a href="login.html" class="btn-backoffice">⚙ Back-office</a>
-    </nav>
-  </header>
 
   <main class="main-container">
 
@@ -286,6 +276,7 @@
     </div>
   </main>
 
+  <script src="header.js"></script>
   <script src="utils.js"></script>
   <script src="cache.js"></script>
   <script src="supabase.js"></script>
@@ -298,7 +289,7 @@
 
     async init() {
       this.loadTheme();
-      document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
+=> this.toggleTheme());
       try {
         const [requests, cfg, clients] = await Promise.all([DB.fetchRequests(), DB.fetchConfig(), DB.fetchClients()]);
         this.all = requests;
@@ -308,19 +299,6 @@
       } catch(e) { console.error(e); }
       await this.populateSelects();
       this.renderList();
-    },
-
-    loadTheme() {
-      const t = localStorage.getItem('cp_theme') || 'dark';
-      document.body.classList.toggle('light', t === 'light');
-      const btn = document.getElementById('themeToggle');
-      if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
-    },
-    toggleTheme() {
-      const isLight = document.body.classList.toggle('light');
-      localStorage.setItem('cp_theme', isLight ? 'light' : 'dark');
-      const btn = document.getElementById('themeToggle');
-      if (btn) btn.textContent = isLight ? '🌙' : '☀️';
     },
 
     async populateSelects() {

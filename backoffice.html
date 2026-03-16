@@ -7,6 +7,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8a030">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,16 +47,6 @@
 </head>
 <body>
 
-  <header class="site-header">
-    <span class="header-title"><span class="header-title-icon">⬡</span>Command Post <span class="backoffice-badge">⚙ Admin</span></span>
-    <nav class="header-nav">
-      <a href="index.html">← Vue publique</a>
-      <a href="changelog.html">Changelog</a>
-      <a href="archives.html">Archives</a>
-      <button class="theme-btn" id="themeToggle" title="Changer le thème">☀️</button>
-      <a href="#" onclick="BO.logout()" style="color:var(--p-critical);border-color:rgba(255,82,82,0.2);">Déconnexion</a>
-    </nav>
-  </header>
 
   <div class="notification hidden" id="notification"></div>
 
@@ -404,12 +395,13 @@
   </div>
 
   <script src="resizable.js"></script>
+  <script src="header.js"></script>
   <script src="utils.js"></script>
   <script src="cache.js"></script>
   <script src="supabase.js"></script>
   <script src="search.js"></script>
   <script src="shortcuts.js"></script>
   <script src="backoffice.js"></script>
-  <script>document.addEventListener("DOMContentLoaded",()=>{Shortcuts.init("backoffice");Shortcuts._ctx="backoffice";});</script>
+  <script>document.addEventListener("DOMContentLoaded",()=>{Header.init("backoffice");Shortcuts.init("backoffice");Shortcuts._ctx="backoffice";BO.init();});</script>
 </body>
 </html>
