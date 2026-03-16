@@ -1316,44 +1316,69 @@ const BO = {
     const el = document.getElementById('reqAdminList');
     if (!el) return;
     const filtered = this.requests.filter(r => r.status === this.currentReqTab);
+    const d  = this.esc.bind(this);
+    const ts = this.toSlug;
 
     if (!filtered.length) {
-      const msgs = {
-        pending:  'Aucune demande en attente.',
-        accepted: 'Aucune demande acceptée.',
-        rejected: 'Aucune demande refusée.'
-      };
+      const msgs = { pending:'Aucune demande en attente.', accepted:'Aucune demande acceptée.', rejected:'Aucune demande refusée.' };
       el.innerHTML = '<div class="empty-state"><span class="empty-icon">📥</span><p>' + msgs[this.currentReqTab] + '</p></div>';
       return;
     }
 
-    el.innerHTML = '<div class="bugs-table-wrapper">' + filtered.map(r => {
-      const d   = this.esc.bind(this);
-      const ts  = this.toSlug;
-      const actions = this.currentReqTab === 'pending'
-        ? '<div style="display:flex;gap:7px;flex-shrink:0;">' +
+    el.innerHTML = '<div class="req-grid">' + filtered.map(r => {
+      const isPending  = r.status === 'pending';
+      const isAccepted = r.status === 'accepted';
+
+      // Avatar initiales du demandeur
+      const initials = (r.author_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+      // Badge statut pour accepté/refusé
+      const statusBadge = isPending ? '' :
+        isAccepted
+          ? '<span class="req-status-badge req-status-accepted">✓ Acceptée</span>'
+          : '<span class="req-status-badge req-status-rejected">✕ Refusée</span>';
+
+      // Actions
+      const actions = isPending
+        ? '<div class="req-card-actions">' +
             '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;" onclick="BO.openAcceptModal(' + r.id + ')">✅ Accepter</button>' +
             '<button class="btn btn-danger"  style="font-size:12px;padding:6px 14px;" onclick="BO.rejectRequest(' + r.id + ')">✕ Refuser</button>' +
           '</div>'
-        : '';
-      return '<div class="request-admin-item">' +
-        '<div class="request-admin-top">' +
-          '<div class="request-admin-info">' +
-            '<div class="request-admin-title">' + d(r.title) + '</div>' +
-            '<div class="request-admin-meta" style="margin-bottom:8px;">' +
-              '<span class="badge badge-type-' + ts(r.type) + '" style="font-size:10px;">' + d(r.type) + '</span>' +
-              '<span class="badge badge-cat-' + ts(r.category) + '" style="font-size:10px;">' + d(r.category) + '</span>' +
+        : statusBadge;
+
+      return '<div class="req-card req-' + r.status + '">' +
+
+        // Header
+        '<div class="req-card-header">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="req-card-title">' + d(r.title) + '</div>' +
+            '<div class="req-card-meta">' +
+              '<span class="badge badge-type-' + ts(r.type)     + '" style="font-size:10px;">' + d(r.type)     + '</span>' +
+              '<span class="badge badge-cat-'  + ts(r.category) + '" style="font-size:10px;">' + d(r.category) + '</span>' +
               (r.client_id ? this._clientBadge(r.client_id) : '') +
-              '<span style="font-size:11px;color:var(--text-muted);">👤 ' + d(r.author_name) + '</span>' +
-              '<span style="font-size:11px;color:var(--text-muted);">✉ ' + d(r.author_email) + '</span>' +
-              '<span style="font-size:11px;color:var(--text-faint);font-family:DM Mono,monospace;">' + this.fmtDatetime(r.created_at) + '</span>' +
             '</div>' +
           '</div>' +
-          actions +
+          (isPending ? '' : '<div style="flex-shrink:0;">' + statusBadge + '</div>') +
         '</div>' +
-        '<div style="font-size:12px;color:var(--text-muted);line-height:1.6;padding:10px 12px;background:var(--bg-raised);border-radius:var(--r-md);border:1px solid var(--border-dim);">' +
-          d(r.description) +
+
+        // Description
+        '<div class="req-card-desc">' + d(r.description) + '</div>' +
+
+        // Footer
+        '<div class="req-card-footer">' +
+          '<div class="req-card-author">' +
+            '<div class="req-card-author-avatar">' + initials + '</div>' +
+            '<div>' +
+              '<div style="font-weight:600;color:var(--text-base);">' + d(r.author_name) + '</div>' +
+              '<div>' + d(r.author_email) + '</div>' +
+            '</div>' +
+            '<span style="font-family:monospace;font-size:10px;color:var(--text-faint);margin-left:6px;">' +
+              this.fmtDatetime(r.created_at) +
+            '</span>' +
+          '</div>' +
+          (isPending ? actions : '') +
         '</div>' +
+
       '</div>';
     }).join('') + '</div>';
   },
