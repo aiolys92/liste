@@ -66,7 +66,7 @@ const BO = {
     this.populateFilters();
     this.populateFormSelects();
     this.renderStats();
-    this.render();
+    this.renderTable();
     this.renderConfigTab();
     // Fermer dropdown état au clic ailleurs
     document.addEventListener('click', e => {
@@ -254,6 +254,27 @@ const BO = {
     });
   },
 
+  // Rendu direct depuis this.bugs (sans fetch)
+  renderTable() {
+    const total      = this.totalBugs || this.bugs.length;
+    const totalPages = Math.max(1, Math.ceil(total / this.perPage));
+    this.currentPage = Math.min(this.currentPage, totalPages);
+    document.getElementById('filterCount').textContent = `${total} résultat${total>1?'s':''}`;
+    document.querySelectorAll('[data-sort]').forEach(th => {
+      th.classList.toggle('sorted', th.dataset.sort === this.sortField);
+      const arrow = th.querySelector('.sort-arrow');
+      if (arrow) arrow.textContent = th.dataset.sort === this.sortField ? (this.sortDir==='asc'?'↑':'↓') : '↕';
+    });
+    const tbody = document.getElementById('bugsTableBody');
+    tbody.innerHTML = this.bugs.length === 0
+      ? `<tr><td colspan="12"><div class="empty-state"><span class="empty-icon">⊘</span><p>Aucune mission.</p></div></td></tr>`
+      : this.bugs.map(b => this.renderRow(b)).join('');
+    this.renderPagination(total, totalPages);
+    this.selected.clear();
+    this.updateBulkBar();
+  },
+
+  // Rendu avec fetch (changement de page, filtres, tri)
   async render() {
     this.showLoading(true);
     try {
@@ -639,6 +660,8 @@ const BO = {
   // ============================================================
   // COMMENTAIRES
   // ============================================================
+  async openDetail(id) { await Detail.open(id); },
+  closeDetail() { Detail.close(); },
   async openComments(bugId) { await Comments.open(bugId); },
   renderComments(c) { Comments.render(c); },
   closeComments() { Comments.close(); },
