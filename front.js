@@ -142,7 +142,8 @@ const Front = {
   timeline: {
     zoom: 'month',
     group: 'category',
-    focusMode: false
+    focusMode: false,
+    filters: { category: '', assignee: '', state: '' }
   },
 
   switchView(v) {
