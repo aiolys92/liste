@@ -36,13 +36,26 @@ const Front = {
     this.populateFilters();
     this.bindEvents();
     this.renderStats();
+    // Rendre directement avec les données déjà chargées, sans refaire la requête
+    this._skipNextFetch = true;
     this.render();
     // Realtime
     if (typeof Realtime !== 'undefined') {
       Realtime.subscribe('bugs', {
-        onInsert: (rec) => { this.renderStats(); if(this.view==='list') this.renderList(); Realtime.notify('Nouvelle mission : ' + rec.title, 'info'); },
-        onUpdate: (rec) => { this.renderStats(); if(this.view==='list') this.renderList(); },
-        onDelete: ()    => { this.renderStats(); if(this.view==='list') this.renderList(); }
+        onInsert: (rec) => {
+          this.totalBugs = (this.totalBugs||0) + 1;
+          this.renderStats();
+          if (this.view==='list' && this.currentPage===1) this.renderList();
+          Realtime.notify('Nouvelle mission : ' + (rec.title||rec.id), 'info');
+        },
+        onUpdate: (rec) => {
+          if (this.view==='list') this.renderList();
+        },
+        onDelete: () => {
+          this.totalBugs = Math.max(0, (this.totalBugs||1) - 1);
+          this.renderStats();
+          if (this.view==='list') this.renderList();
+        }
       });
     }
   },
@@ -163,7 +176,7 @@ const Front = {
   },
 
   renderStats() {
-    const total=this.bugs.length;
+    const total=this.totalBugs||this.bugs.length;
     const critical=this.bugs.filter(b=>b.priority==='Critique').length;
     const progress=this.bugs.filter(b=>b.state==='En cours').length;
     const resolved=this.bugs.filter(b=>b.state==='Résolu').length;
@@ -201,23 +214,27 @@ const Front = {
   render(){if(this.view==='list')this.renderList();else if(this.view==='kanban')this.renderKanban();else if(this.view==='timeline')this.renderTimeline();},
 
   async renderList() {
-    this.showLoading(true);
-    try {
-      const result = await DB.fetchBugsPaged({
-        page: this.currentPage,
-        perPage: this.perPage,
-        filters: this.filters,
-        sort: this.sortField,
-        dir: this.sortDir
-      });
-      this.bugs = result.data;
-      this.totalBugs = result.total;
-    } catch(e) {
-      this.showError('Erreur chargement : ' + e.message);
+    if (this._skipNextFetch) {
+      this._skipNextFetch = false;
+    } else {
+      this.showLoading(true);
+      try {
+        const result = await DB.fetchBugsPaged({
+          page: this.currentPage,
+          perPage: this.perPage,
+          filters: this.filters,
+          sort: this.sortField,
+          dir: this.sortDir
+        });
+        this.bugs = result.data;
+        this.totalBugs = result.total;
+      } catch(e) {
+        this.showError('Erreur chargement : ' + e.message);
+        this.showLoading(false);
+        return;
+      }
       this.showLoading(false);
-      return;
     }
-    this.showLoading(false);
     const total = this.totalBugs;
     const totalPages = Math.max(1, Math.ceil(total / this.perPage));
     this.currentPage = Math.min(this.currentPage, totalPages);
