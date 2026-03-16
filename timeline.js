@@ -86,7 +86,7 @@ const Timeline = {
     const LABEL_W = 200;
 
     // Filtrer
-    let bugs = this._ctx.bugs.filter(b => b.date);
+    let bugs = (this._ctx._tlBugs || this._ctx.bugs).filter(b => b.date);
     if (tl.filters.category) bugs = bugs.filter(b => b.category === tl.filters.category);
     if (tl.filters.assignee) bugs = bugs.filter(b => b.assignee === tl.filters.assignee);
     if (tl.filters.state)    bugs = bugs.filter(b => b.state    === tl.filters.state);
