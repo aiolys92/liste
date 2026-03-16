@@ -2211,3 +2211,116 @@ body.light .kanban-card { background: var(--bg-raised); }
   background: var(--bg-raised);
   z-index: 8;
 }
+
+/* ============================================
+   TEXT MARQUEE — défilement si texte tronqué
+   ============================================ */
+
+/* Conteneur qui déclenche le marquee */
+.marquee-wrap {
+  overflow: hidden;
+  display: block;
+  max-width: 100%;
+}
+
+@keyframes marquee-scroll {
+  0%         { transform: translateX(0); }
+  10%        { transform: translateX(0); }       /* pause au début */
+  80%        { transform: translateX(var(--marquee-dist, -50%)); }
+  90%,100%   { transform: translateX(var(--marquee-dist, -50%)); } /* pause à la fin */
+}
+
+.marquee-wrap:hover .marquee-text {
+  animation: marquee-scroll 3.5s ease-in-out infinite;
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  transition: none;
+}
+
+/* Sur les badges (état, type, catégorie) */
+.badge {
+  max-width: 130px;
+  overflow: hidden;
+}
+
+/* Kanban — titre de carte */
+.kanban-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kanban-card:hover .kanban-card-title {
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Kanban — badge état dans le footer */
+.kanban-card-state {
+  max-width: 110px;
+  overflow: hidden;
+}
+
+/* Timeline — label de ligne */
+.tl-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+/* Application du marquee sur les éléments qui peuvent déborder */
+.badge-state-en-cours,
+.badge-state-en-attente,
+.badge-state-en-cours .badge,
+.badge-state-en-attente .badge {
+  overflow: hidden;
+}
+
+/* Marquee générique sur tout élément avec data-marquee */
+[data-marquee] {
+  overflow: hidden;
+  display: block;
+  position: relative;
+  cursor: default;
+}
+
+@keyframes marquee-auto {
+  0%,15%   { transform: translateX(0); }
+  75%,100% { transform: translateX(var(--md, 0px)); }
+}
+
+[data-marquee]:hover {
+  overflow: visible;
+}
+[data-marquee]:hover span {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marquee-auto 2.8s ease-in-out infinite;
+}
+
+/* Permettre au marquee de fonctionner sur les badges */
+.col-state td,
+.kanban-card-footer,
+.kanban-card-state,
+.detail-field-value {
+  overflow: hidden;
+}
+
+/* Les badges dans ces conteneurs peuvent défiler */
+.col-state .badge,
+.kanban-card-footer .badge,
+.detail-field-value .badge {
+  max-width: 110px;
+  display: inline-flex;
+  overflow: hidden;
+  position: relative;
+}
