@@ -49,6 +49,7 @@ const Dashboard = {
     const prioCounts  = {}; b.forEach(x => { prioCounts[x.priority]   = (prioCounts[x.priority]||0)+1; });
     const catCounts   = {}; b.forEach(x => { catCounts[x.category]    = (catCounts[x.category]||0)+1; });
 
+    window._dashBugs = this.bugs;
     document.getElementById('dashContent').innerHTML = `
 
       <!-- ROW 1 : KPIs -->
@@ -131,29 +132,58 @@ const Dashboard = {
     if (typeof DB !== 'undefined') {
       DB.fetchMembers().then(members => {
         if (!members.length) return;
+        const totalBugs = this.bugs.length || 1;
         const memberStats = members.map(m => {
           const assigned = this.bugs.filter(x => x.assignee === m.name);
+          const inProgress = assigned.filter(x => x.state==='En cours').length;
           const done     = assigned.filter(x => x.state==='Résolu'||x.state==='Fermé').length;
+          const overdue  = assigned.filter(x => x.due_date && new Date(x.due_date)<new Date() && x.state!=='Résolu' && x.state!=='Fermé').length;
+          const critical = assigned.filter(x => x.priority==='Critique').length;
           const rate     = assigned.length ? Math.round(done/assigned.length*100) : 0;
-          return { ...m, total: assigned.length, done, rate };
+          const charge   = Math.round((assigned.length/totalBugs)*100); // % du total
+          return { ...m, total: assigned.length, inProgress, done, overdue, critical, rate, charge };
         }).filter(m => m.total > 0).sort((a,b)=>b.total-a.total);
 
         if (!memberStats.length) return;
+
         const membersHtml = `<div class="db-card" style="margin-top:14px;">
-          <div class="db-card-label">Charge par membre</div>
+          <div class="db-card-label" style="display:flex;align-items:center;justify-content:space-between;">
+            Charge par membre
+            <span style="font-size:11px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;">
+              % = part du total des missions
+            </span>
+          </div>
           <div class="db-members-grid">
             ${memberStats.map(m => `
-              <div class="db-member-card">
-                <span class="avatar" style="background:${m.color};width:32px;height:32px;font-size:12px;flex-shrink:0;">${m.initials}</span>
-                <div class="db-member-info">
+              <div class="db-member-card" onclick="DashboardMemberModal.open(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+                style="cursor:pointer;">
+                <span class="avatar" style="background:${m.color};width:36px;height:36px;font-size:13px;flex-shrink:0;">${m.initials}</span>
+                <div class="db-member-info" style="flex:1;min-width:0;">
                   <div class="db-member-name">${m.name}</div>
-                  <div class="db-member-stats">${m.total} mission${m.total>1?'s':''} · ${m.done} résolues</div>
+                  <!-- Barre de charge -->
+                  <div style="margin-top:5px;background:var(--bg-hover);border-radius:3px;height:5px;overflow:hidden;">
+                    <div style="height:100%;border-radius:3px;background:${m.color};width:${m.charge}%;transition:width 0.6s ease;"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:10px;color:var(--text-faint);">
+                    <span>${m.total} mission${m.total>1?'s':''}</span>
+                    <span>${m.charge}% du total</span>
+                  </div>
                 </div>
-                <div class="db-member-rate" title="Taux de résolution">${m.rate}%</div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div class="db-member-rate" style="font-size:20px;">${m.rate}%</div>
+                  <div style="font-size:10px;color:var(--text-faint);">résolution</div>
+                </div>
               </div>`).join('')}
           </div>
+          <div style="font-size:11px;color:var(--text-faint);text-align:right;margin-top:8px;">
+            Cliquer sur un membre pour le détail
+          </div>
         </div>`;
+
         document.getElementById('dashContent').insertAdjacentHTML('beforeend', membersHtml);
+
+        // Stocker pour la modale
+        window._dashMemberStats = memberStats;
       }).catch(()=>{});
     }
 
@@ -421,5 +451,138 @@ const Dashboard = {
         <span style="margin-left:auto;font-size:10px;color:var(--text-faint);">30 derniers jours</span>
       </div>
     </div>`;
+  }
+};
+
+// ============================================
+// MODALE DÉTAIL MEMBRE
+// ============================================
+const DashboardMemberModal = {
+  open(m) {
+    // Récupérer les bugs du membre depuis window._dashBugs
+    const bugs = (window._dashBugs || Dashboard.bugs).filter(b => b.assignee === m.name);
+    const stateColors = { 'Nouveau':'#40e0b0','En cours':'#50b8ff','Résolu':'#70d060','Fermé':'#7a7464','Rejeté':'#ff5252','En attente':'#ffd040' };
+    const prioColors  = { 'Critique':'#ff5252','Haute':'#ff9040','Moyenne':'#ffd040','Basse':'#50b8ff','Mineure':'#c060ff' };
+
+    // Grouper par état
+    const byState = {};
+    bugs.forEach(b => { byState[b.state] = (byState[b.state]||[]).concat(b); });
+
+    const stateRows = Object.entries(byState).map(([state, list]) => {
+      const col = stateColors[state] || '#888';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-dim);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;"></span>
+          <span style="font-size:13px;color:var(--text-base);">${state}</span>
+        </div>
+        <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:${col};">${list.length}</span>
+      </div>`;
+    }).join('');
+
+    // Missions en retard
+    const overdueList = bugs.filter(b => b.due_date && new Date(b.due_date)<new Date() && b.state!=='Résolu' && b.state!=='Fermé');
+
+    // Répartition priorités
+    const prioRows = ['Critique','Haute','Moyenne','Basse','Mineure'].map(p => {
+      const n = bugs.filter(b=>b.priority===p).length;
+      if (!n) return '';
+      const col = prioColors[p];
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="flex:1;background:var(--bg-hover);border-radius:3px;height:6px;overflow:hidden;">
+          <div style="height:100%;border-radius:3px;background:${col};width:${Math.round(n/bugs.length*100)}%;"></div>
+        </div>
+        <span style="font-size:11px;color:var(--text-muted);width:60px;text-align:right;">${p} (${n})</span>
+      </div>`;
+    }).join('');
+
+    const html = `
+      <div style="position:fixed;inset:0;background:rgba(4,5,8,0.75);backdrop-filter:blur(6px);
+        z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;"
+        id="memberModalOverlay" onclick="if(event.target===this)DashboardMemberModal.close()">
+        <div style="background:var(--bg-overlay);border:1px solid var(--border-strong);border-radius:var(--r-xl);
+          width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.6);
+          animation:slideUp 0.2s cubic-bezier(0.34,1.2,0.64,1);">
+
+          <!-- Header -->
+          <div style="padding:20px 22px 16px;border-bottom:1px solid var(--border-base);
+            display:flex;align-items:center;gap:14px;position:sticky;top:0;
+            background:var(--bg-overlay);z-index:1;">
+            <span class="avatar" style="background:${m.color};width:44px;height:44px;font-size:16px;flex-shrink:0;">${m.initials}</span>
+            <div style="flex:1;">
+              <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--text-bright);">${m.name}</div>
+              <div style="font-size:12px;color:var(--text-muted);">${m.total} mission${m.total>1?'s':''} assignées · ${m.charge}% de la charge totale</div>
+            </div>
+            <button onclick="DashboardMemberModal.close()"
+              style="background:var(--bg-raised);border:1px solid var(--border-base);border-radius:var(--r-md);
+              color:var(--text-muted);padding:4px 10px;font-size:16px;cursor:pointer;line-height:1;">✕</button>
+          </div>
+
+          <!-- KPIs -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 22px;">
+            ${[
+              { v: m.total,      l: 'Total',      c: 'var(--text-bright)' },
+              { v: m.inProgress, l: 'En cours',   c: '#50b8ff' },
+              { v: m.overdue,    l: 'En retard',  c: m.overdue?'#ff5252':'var(--text-faint)' },
+              { v: m.critical,   l: 'Critiques',  c: m.critical?'#ff5252':'var(--text-faint)' },
+            ].map(k => `
+              <div style="background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:10px;text-align:center;">
+                <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:${k.c};line-height:1;">${k.v}</div>
+                <div style="font-size:10px;color:var(--text-faint);margin-top:3px;">${k.l}</div>
+              </div>`).join('')}
+          </div>
+
+          <!-- Taux de résolution -->
+          <div style="padding:0 22px 16px;">
+            <div style="background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:12px 14px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-size:12px;color:var(--text-muted);">Taux de résolution</span>
+                <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#70d060;">${m.rate}%</span>
+              </div>
+              <div style="background:var(--bg-hover);border-radius:4px;height:8px;overflow:hidden;">
+                <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#40e0b0,#70d060);width:${m.rate}%;transition:width 0.6s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Répartition par état -->
+          <div style="padding:0 22px 16px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Par état</div>
+            ${stateRows}
+          </div>
+
+          <!-- Répartition par priorité -->
+          <div style="padding:0 22px 16px;">
+            <div style="font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Par priorité</div>
+            ${prioRows}
+          </div>
+
+          ${overdueList.length ? `
+          <!-- Missions en retard -->
+          <div style="padding:0 22px 20px;">
+            <div style="font-size:11px;font-weight:700;color:#ff5252;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚠ En retard (${overdueList.length})</div>
+            ${overdueList.slice(0,5).map(b=>`
+              <div style="font-size:12px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border-dim);
+                display:flex;justify-content:space-between;align-items:center;">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${b.title||b.id}</span>
+                <span style="font-size:10px;color:#ff5252;flex-shrink:0;margin-left:8px;">${b.due_date}</span>
+              </div>`).join('')}
+          </div>` : ''}
+
+        </div>
+      </div>`;
+
+    // Injecter
+    let el = document.getElementById('memberModalContainer');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'memberModalContainer';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = html;
+  },
+
+  close() {
+    const el = document.getElementById('memberModalContainer');
+    if (el) el.innerHTML = '';
   }
 };
