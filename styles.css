@@ -2337,3 +2337,12 @@ body.light .kanban-card { background: var(--bg-raised); }
 .badge-state-en-attente .badge-dot {
   display: none;
 }
+
+/* Masquer le dot sur les badges de priorité */
+.badge-prio-critique .badge-dot,
+.badge-prio-haute .badge-dot,
+.badge-prio-moyenne .badge-dot,
+.badge-prio-basse .badge-dot,
+.badge-prio-mineure .badge-dot {
+  display: none;
+}
