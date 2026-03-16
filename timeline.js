@@ -12,7 +12,7 @@ const Timeline = {
     this._prefix = prefix;
   },
 
-async renderTimeline() {
+  async render() {
     const container = document.getElementById('panelTimeline');
     // Charger toutes les missions pour la timeline (pas seulement la page courante)
     if (!this._ctx._tlBugsLoaded) {

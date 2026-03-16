@@ -770,6 +770,200 @@ const BO = {
     } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
   },
 
+  // ============================================================
+  // CONFIG TAB
+  // ============================================================
+  renderConfigTab() {
+    this.renderConfigSection('types',      'Types de missions',   'Ajouter un type...');
+    this.renderConfigSection('categories', 'Categories',          'Ajouter une categorie...');
+    this.renderMembersSection();
+    this.renderClientsSection();
+  },
+
+  renderConfigSection(key, label, placeholder) {
+    const container = document.getElementById('config-' + key);
+    if (!container) return;
+    const items = this.config[key];
+    let html = '<div class="config-section">';
+    html += '<div class="config-section-header">';
+    html += '<span class="config-section-title">' + label + '</span>';
+    html += '<span class="config-section-count">' + items.length + ' entree' + (items.length>1?'s':'') + '</span>';
+    html += '</div>';
+    html += '<div class="config-items" id="items-' + key + '">';
+    items.forEach((item, i) => {
+      html += '<div class="config-item">';
+      html += '<span class="config-item-drag">&#x283f;</span>';
+      html += '<input type="text" class="config-item-input" value="' + esc(item) + '"';
+      html += ' onchange="BO.editConfigItem(\'' + key + '\',' + i + ',this.value)"';
+      html += ' onblur="BO.editConfigItem(\'' + key + '\',' + i + ',this.value)">';
+      html += '<button class="config-item-delete" onclick="BO.removeConfigItem(\'' + key + '\',' + i + ')">×</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="config-add-row">';
+    html += '<input type="text" class="form-input config-add-input" id="newItem-' + key + '" placeholder="' + placeholder + '" maxlength="40">';
+    html += '<button class="btn btn-primary config-add-btn" onclick="BO.addConfigItem(\'' + key + '\')">+ Ajouter</button>';
+    html += '</div>';
+    html += '<div class="config-save-row">';
+    html += '<button class="btn btn-primary" onclick="BO.saveConfig(\'' + key + '\')">Sauvegarder</button>';
+    html += '</div>';
+    html += '</div>';
+    container.innerHTML = html;
+    document.getElementById('newItem-' + key)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') this.addConfigItem(key);
+    });
+  },
+
+  addConfigItem(key) {
+    const input = document.getElementById('newItem-' + key);
+    const val = input.value.trim();
+    if (!val) return;
+    if (this.config[key].includes(val)) { this.showNotif('"' + val + '" existe deja.', true); return; }
+    this.config[key].push(val);
+    input.value = '';
+    const labels = { types: ['Types de missions', 'Ajouter un type...'], categories: ['Categories', 'Ajouter une categorie...'] };
+    const [label, ph] = labels[key] || [key, ''];
+    this.renderConfigSection(key, label, ph);
+  },
+
+  editConfigItem(key, index, val) {
+    const v = val.trim();
+    if (v) this.config[key][index] = v;
+  },
+
+  removeConfigItem(key, index) {
+    const item = this.config[key][index];
+    if (!confirm('Supprimer "' + item + '" ?')) return;
+    this.config[key].splice(index, 1);
+    const labels = { types: ['Types de missions', 'Ajouter un type...'], categories: ['Categories', 'Ajouter une categorie...'] };
+    const [label, ph] = labels[key] || [key, ''];
+    this.renderConfigSection(key, label, ph);
+  },
+
+  async saveConfig(key) {
+    const btn = document.querySelector('#config-' + key + ' .config-save-row .btn-primary');
+    if (!btn) return;
+    btn.textContent = 'Sauvegarde...'; btn.disabled = true;
+    try {
+      await DB.updateConfig(key, this.config[key]);
+      this.populateFilters();
+      this.populateFormSelects();
+      this.showNotif('Types/Categories sauvegardes');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+    finally { btn.textContent = 'Sauvegarder'; btn.disabled = false; }
+  },
+
+  renderMembersSection() {
+    const container = document.getElementById('config-members');
+    if (!container) return;
+    const COLORS = ['#c8a030','#50b8ff','#40e0b0','#ff9040','#c060ff','#70d060','#ff5252','#ffd040'];
+    let html = '<div class="config-section">';
+    html += '<div class="config-section-header">';
+    html += '<span class="config-section-title">Membres</span>';
+    html += '<span class="config-section-count">' + this.members.length + ' membre' + (this.members.length>1?'s':'') + '</span>';
+    html += '</div><div class="config-items">';
+    if (this.members.length) {
+      this.members.forEach(m => {
+        html += '<div class="config-item">';
+        html += '<span class="avatar" style="background:' + m.color + ';flex-shrink:0;">' + esc(m.initials) + '</span>';
+        html += '<span style="flex:1;font-size:13px;color:var(--text-bright);">' + esc(m.name) + '</span>';
+        html += '<button class="config-item-delete" onclick="BO.deleteMember(' + m.id + ')">×</button>';
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="padding:12px;color:var(--text-faint);font-size:12px;">Aucun membre.</div>';
+    }
+    html += '</div>';
+    html += '<div class="config-add-row" style="flex-direction:column;align-items:stretch;gap:8px;">';
+    html += '<input type="text" class="form-input" id="newMemberName" placeholder="Nom complet..." maxlength="40">';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<input type="text" class="form-input" id="newMemberInitials" placeholder="Initiales (ex: JD)" maxlength="3" style="width:80px;">';
+    html += '<select class="form-select" id="newMemberColor" style="flex:1;">';
+    COLORS.forEach(c => { html += '<option value="' + c + '">' + c + '</option>'; });
+    html += '</select>';
+    html += '<button class="btn btn-primary" onclick="BO.addMember()">+ Ajouter</button>';
+    html += '</div></div></div>';
+    container.innerHTML = html;
+  },
+
+  async addMember() {
+    const name     = document.getElementById('newMemberName').value.trim();
+    const initials = document.getElementById('newMemberInitials').value.trim().toUpperCase();
+    const color    = document.getElementById('newMemberColor').value;
+    if (!name || !initials) { this.showNotif('Remplissez nom et initiales.', true); return; }
+    try {
+      const created = await DB.insertMember({name, initials, color});
+      this.members.push(Array.isArray(created) ? created[0] : {name, initials, color, id: Date.now()});
+      this.renderMembersSection();
+      this.showNotif('Membre ' + name + ' ajoute');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  },
+
+  async deleteMember(id) {
+    if (!confirm('Supprimer ce membre ?')) return;
+    try {
+      await DB.deleteMember(id);
+      this.members = this.members.filter(m => m.id !== id);
+      this.renderMembersSection();
+      this.showNotif('Membre supprime');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  },
+
+  renderClientsSection() {
+    const container = document.getElementById('config-clients');
+    if (!container) return;
+    const COLORS = ['#c8a030','#50b8ff','#40e0b0','#ff9040','#c060ff','#70d060','#ff5252','#ffd040'];
+    let html = '<div class="config-section">';
+    html += '<div class="config-section-header">';
+    html += '<span class="config-section-title">Clients</span>';
+    html += '<span class="config-section-count">' + this.clients.length + ' client' + (this.clients.length>1?'s':'') + '</span>';
+    html += '</div><div class="config-items">';
+    if (this.clients.length) {
+      this.clients.forEach(c => {
+        html += '<div class="config-item">';
+        html += '<span style="width:12px;height:12px;border-radius:50%;background:' + c.color + ';flex-shrink:0;display:inline-block;"></span>';
+        html += '<span style="flex:1;font-size:13px;color:var(--text-bright);">' + esc(c.name) + '</span>';
+        html += '<button class="config-item-delete" onclick="BO.deleteClient(' + c.id + ')">×</button>';
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="padding:12px;color:var(--text-faint);font-size:12px;">Aucun client.</div>';
+    }
+    html += '</div>';
+    html += '<div class="config-add-row" style="flex-direction:column;align-items:stretch;gap:8px;">';
+    html += '<input type="text" class="form-input" id="newClientName" placeholder="Nom du client..." maxlength="60">';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<select class="form-select" id="newClientColor" style="flex:1;">';
+    COLORS.forEach(c => { html += '<option value="' + c + '">' + c + '</option>'; });
+    html += '</select>';
+    html += '<button class="btn btn-primary" onclick="BO.addClient()">+ Ajouter</button>';
+    html += '</div></div></div>';
+    container.innerHTML = html;
+  },
+
+  async addClient() {
+    const name  = document.getElementById('newClientName').value.trim();
+    const color = document.getElementById('newClientColor').value;
+    if (!name) { this.showNotif('Remplissez le nom du client.', true); return; }
+    try {
+      const created = await DB.insertClient({name, color});
+      this.clients.push(Array.isArray(created) ? created[0] : {name, color, id: Date.now()});
+      this.renderClientsSection();
+      this.showNotif('Client ' + name + ' ajoute');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  },
+
+  async deleteClient(id) {
+    if (!confirm('Supprimer ce client ?')) return;
+    try {
+      await DB.deleteClient(id);
+      this.clients = this.clients.filter(c => c.id !== id);
+      this.renderClientsSection();
+      this.showNotif('Client supprime');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  },
+
+
 };
 
 document.addEventListener('DOMContentLoaded',()=>BO.init());
