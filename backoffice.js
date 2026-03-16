@@ -291,8 +291,8 @@ const BO = {
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td>${this.renderStateDropdown(b)}</td>
       <td style="text-align:center;">${avatarHtml}</td>
-      <td>${dueDateHtml}</td>
       <td><div class="date-main">${b.start_date ? this.fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
+      <td>${dueDateHtml}</td>
       <td><button class="action-menu-btn" onclick="event.stopPropagation();BO.openActionModal('${d(b.id)}')" title="Actions">···</button></td>
     </tr>`;
   },

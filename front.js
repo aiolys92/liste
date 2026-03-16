@@ -261,8 +261,8 @@ const Front = {
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
       <td style="text-align:center;">${avatarHtml}</td>
-      <td>${dueDateHtml}</td>
       <td><div class="date-main">${b.start_date ? this.fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
+      <td>${dueDateHtml}</td>
       <td style="text-align:center;"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
     </tr>`;
   },
