@@ -300,7 +300,7 @@ const BO = {
       <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
       <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
       <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
-      <td class="col-client">${this._clientBadge(b.client_id)}</td>
+      <td>${this._clientBadge(b.client_id)}</td>
       <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td>${this.renderStateDropdown(b)}</td>
