@@ -133,16 +133,38 @@ const Dashboard = {
       DB.fetchMembers().then(members => {
         if (!members.length) return;
         const totalBugs = this.bugs.length || 1;
+
+        // Découper en semaines : S0=cette semaine, S1=semaine prochaine, S2=dans 2 semaines, S3+=au-delà
+        const now   = new Date(); now.setHours(0,0,0,0);
+        const weekMs = 7 * 24 * 3600 * 1000;
+        const weekBound = (n) => new Date(now.getTime() + n * weekMs);
+
         const memberStats = members.map(m => {
-          const assigned = this.bugs.filter(x => x.assignee === m.name);
+          const assigned   = this.bugs.filter(x => x.assignee === m.name && x.state !== 'Résolu' && x.state !== 'Fermé');
+          const allAssigned = this.bugs.filter(x => x.assignee === m.name);
+          const done       = allAssigned.filter(x => x.state==='Résolu'||x.state==='Fermé').length;
           const inProgress = assigned.filter(x => x.state==='En cours').length;
-          const done     = assigned.filter(x => x.state==='Résolu'||x.state==='Fermé').length;
-          const overdue  = assigned.filter(x => x.due_date && new Date(x.due_date)<new Date() && x.state!=='Résolu' && x.state!=='Fermé').length;
-          const critical = assigned.filter(x => x.priority==='Critique').length;
-          const rate     = assigned.length ? Math.round(done/assigned.length*100) : 0;
-          const charge   = Math.round((assigned.length/totalBugs)*100); // % du total
-          return { ...m, total: assigned.length, inProgress, done, overdue, critical, rate, charge };
-        }).filter(m => m.total > 0).sort((a,b)=>b.total-a.total);
+          const critical   = assigned.filter(x => x.priority==='Critique').length;
+
+          // Taux de charge hebdomadaire : missions actives avec échéance dans les 7 prochains jours
+          const overdue  = assigned.filter(x => x.due_date && new Date(x.due_date) < now).length;
+          const thisWeek = assigned.filter(x => x.due_date && new Date(x.due_date) >= now && new Date(x.due_date) < weekBound(1)).length;
+          const nextWeek = assigned.filter(x => x.due_date && new Date(x.due_date) >= weekBound(1) && new Date(x.due_date) < weekBound(2)).length;
+          const week3    = assigned.filter(x => x.due_date && new Date(x.due_date) >= weekBound(2) && new Date(x.due_date) < weekBound(3)).length;
+          const noDue    = assigned.filter(x => !x.due_date).length;
+
+          // Score de charge : missions en retard = 3pts, cette semaine = 2pts, semaine prochaine = 1pt
+          const chargeScore = overdue * 3 + thisWeek * 2 + nextWeek * 1;
+          const rate        = allAssigned.length ? Math.round(done/allAssigned.length*100) : 0;
+          const charge      = Math.round((assigned.length/totalBugs)*100);
+
+          return { ...m, total: assigned.length, allTotal: allAssigned.length, inProgress, done,
+                   overdue, thisWeek, nextWeek, week3, noDue, critical, rate, charge, chargeScore };
+        }).filter(m => m.allTotal > 0).sort((a,b)=>b.chargeScore-a.chargeScore || b.total-a.total);
+
+        // Normaliser le score de charge sur 100% (relatif au membre le plus chargé)
+        const maxScore = Math.max(...memberStats.map(m=>m.chargeScore), 1);
+        memberStats.forEach(m => { m.chargeWeekPct = Math.round((m.chargeScore/maxScore)*100); });
 
         if (!memberStats.length) return;
 
@@ -154,26 +176,40 @@ const Dashboard = {
             </span>
           </div>
           <div class="db-members-grid">
-            ${memberStats.map(m => `
+            ${memberStats.map(m => {
+              // Couleur de la barre selon la pression
+              const barColor = m.chargeWeekPct >= 80 ? '#ff5252' : m.chargeWeekPct >= 50 ? '#ffd040' : '#70d060';
+              const pressureLabel = m.chargeWeekPct >= 80 ? '🔴 Surchargé' : m.chargeWeekPct >= 50 ? '🟡 Chargé' : '🟢 Disponible';
+              return `
               <div class="db-member-card" onclick="DashboardMemberModal.open(${JSON.stringify(m).replace(/"/g,'&quot;')})"
-                style="cursor:pointer;">
-                <span class="avatar" style="background:${m.color};width:36px;height:36px;font-size:13px;flex-shrink:0;">${m.initials}</span>
-                <div class="db-member-info" style="flex:1;min-width:0;">
-                  <div class="db-member-name">${m.name}</div>
-                  <!-- Barre de charge -->
-                  <div style="margin-top:5px;background:var(--bg-hover);border-radius:3px;height:5px;overflow:hidden;">
-                    <div style="height:100%;border-radius:3px;background:${m.color};width:${m.charge}%;transition:width 0.6s ease;"></div>
+                style="cursor:pointer;flex-direction:column;align-items:stretch;gap:10px;">
+                <!-- Ligne principale -->
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span class="avatar" style="background:${m.color};width:36px;height:36px;font-size:13px;flex-shrink:0;">${m.initials}</span>
+                  <div style="flex:1;min-width:0;">
+                    <div class="db-member-name">${m.name}</div>
+                    <div style="font-size:10px;color:var(--text-faint);">${m.total} active${m.total>1?'s':''} · ${pressureLabel}</div>
                   </div>
-                  <div style="display:flex;justify-content:space-between;margin-top:3px;font-size:10px;color:var(--text-faint);">
-                    <span>${m.total} mission${m.total>1?'s':''}</span>
-                    <span>${m.charge}% du total</span>
+                  <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${barColor};line-height:1;">${m.chargeWeekPct}%</div>
+                    <div style="font-size:9px;color:var(--text-faint);">charge</div>
                   </div>
                 </div>
-                <div style="text-align:right;flex-shrink:0;">
-                  <div class="db-member-rate" style="font-size:20px;">${m.rate}%</div>
-                  <div style="font-size:10px;color:var(--text-faint);">résolution</div>
+                <!-- Barre de charge hebdo -->
+                <div>
+                  <div style="background:var(--bg-hover);border-radius:3px;height:6px;overflow:hidden;">
+                    <div style="height:100%;border-radius:3px;background:${barColor};width:${m.chargeWeekPct}%;transition:width 0.7s ease;"></div>
+                  </div>
+                  <!-- Mini timeline semaines -->
+                  <div style="display:flex;gap:4px;margin-top:6px;">
+                    ${m.overdue  ? `<span style="font-size:9px;background:rgba(255,82,82,0.15);color:#ff5252;border:1px solid rgba(255,82,82,0.3);border-radius:3px;padding:1px 5px;">⚠ ${m.overdue} retard</span>` : ''}
+                    ${m.thisWeek ? `<span style="font-size:9px;background:rgba(255,208,64,0.12);color:#ffd040;border:1px solid rgba(255,208,64,0.25);border-radius:3px;padding:1px 5px;">S0 · ${m.thisWeek}</span>` : ''}
+                    ${m.nextWeek ? `<span style="font-size:9px;background:rgba(80,184,255,0.1);color:#50b8ff;border:1px solid rgba(80,184,255,0.2);border-radius:3px;padding:1px 5px;">S+1 · ${m.nextWeek}</span>` : ''}
+                    ${m.noDue    ? `<span style="font-size:9px;background:var(--bg-raised);color:var(--text-faint);border:1px solid var(--border-dim);border-radius:3px;padding:1px 5px;">Sans date · ${m.noDue}</span>` : ''}
+                  </div>
                 </div>
-              </div>`).join('')}
+              </div>`;
+            }).join('')}
           </div>
           <div style="font-size:11px;color:var(--text-faint);text-align:right;margin-top:8px;">
             Cliquer sur un membre pour le détail
@@ -517,13 +553,13 @@ const DashboardMemberModal = {
               color:var(--text-muted);padding:4px 10px;font-size:16px;cursor:pointer;line-height:1;">✕</button>
           </div>
 
-          <!-- KPIs -->
+          <!-- KPIs charge semaine -->
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 22px;">
             ${[
-              { v: m.total,      l: 'Total',      c: 'var(--text-bright)' },
-              { v: m.inProgress, l: 'En cours',   c: '#50b8ff' },
-              { v: m.overdue,    l: 'En retard',  c: m.overdue?'#ff5252':'var(--text-faint)' },
-              { v: m.critical,   l: 'Critiques',  c: m.critical?'#ff5252':'var(--text-faint)' },
+              { v: m.overdue,   l: 'En retard',  c: m.overdue ?'#ff5252':'var(--text-faint)' },
+              { v: m.thisWeek,  l: 'Cette sem.',  c: m.thisWeek?'#ffd040':'var(--text-faint)' },
+              { v: m.nextWeek,  l: 'Sem. +1',     c: m.nextWeek?'#50b8ff':'var(--text-faint)' },
+              { v: m.noDue,     l: 'Sans date',   c: 'var(--text-muted)' },
             ].map(k => `
               <div style="background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:10px;text-align:center;">
                 <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:${k.c};line-height:1;">${k.v}</div>
@@ -531,15 +567,22 @@ const DashboardMemberModal = {
               </div>`).join('')}
           </div>
 
-          <!-- Taux de résolution -->
+          <!-- Barre de charge hebdomadaire -->
           <div style="padding:0 22px 16px;">
             <div style="background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:12px 14px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                <span style="font-size:12px;color:var(--text-muted);">Taux de résolution</span>
-                <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#70d060;">${m.rate}%</span>
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;">
+                <span style="font-size:12px;color:var(--text-muted);">Pression hebdomadaire</span>
+                <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;
+                  color:${m.chargeWeekPct>=80?'#ff5252':m.chargeWeekPct>=50?'#ffd040':'#70d060'};">
+                  ${m.chargeWeekPct}%</span>
               </div>
-              <div style="background:var(--bg-hover);border-radius:4px;height:8px;overflow:hidden;">
-                <div style="height:100%;border-radius:4px;background:linear-gradient(90deg,#40e0b0,#70d060);width:${m.rate}%;transition:width 0.6s ease;"></div>
+              <div style="background:var(--bg-hover);border-radius:4px;height:10px;overflow:hidden;">
+                <div style="height:100%;border-radius:4px;
+                  background:${m.chargeWeekPct>=80?'linear-gradient(90deg,#ff9040,#ff5252)':m.chargeWeekPct>=50?'linear-gradient(90deg,#ffd040,#ff9040)':'linear-gradient(90deg,#40e0b0,#70d060)'};
+                  width:${m.chargeWeekPct}%;transition:width 0.6s ease;"></div>
+              </div>
+              <div style="font-size:10px;color:var(--text-faint);margin-top:6px;">
+                Score : retard×3 + cette semaine×2 + semaine prochaine×1. Normalisé sur le membre le plus chargé.
               </div>
             </div>
           </div>
