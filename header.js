@@ -12,6 +12,8 @@ const Header = {
 
   _navAdmin: [
     { id: 'public',    href: 'index.html',     label: '← Vue publique' },
+    { id: 'timeline',  href: '#',              label: '📅 Timeline',  onclick: "BO.switchTab('timeline')" },
+    { id: 'dashboard', href: 'dashboard.html', label: '📊 Dashboard' },
     { id: 'changelog', href: 'changelog.html', label: 'Changelog' },
     { id: 'archives',  href: 'archives.html',  label: 'Archives' },
   ],
@@ -35,9 +37,11 @@ const Header = {
       ? `<span class="header-title"><span class="header-title-icon">⬡</span>Command Post <span class="backoffice-badge">⚙ Admin</span></span>`
       : `<a href="index.html" class="header-title"><span class="header-title-icon">⬡</span>Command Post</a>`;
 
-    const links = navLinks.map(l =>
-      `<a href="${l.href}"${l.id === pageId ? ' class="active"' : ''}>${l.label}</a>`
-    ).join('');
+    const links = navLinks.map(l => {
+      const active  = l.id === pageId ? ' class="active"' : '';
+      const onclick = l.onclick ? ` onclick="${l.onclick};return false;"` : '';
+      return `<a href="${l.href}"${active}${onclick}>${l.label}</a>`;
+    }).join('');
 
     const rightBtn = isAdmin
       ? `<a href="#" onclick="typeof BO!=='undefined'&&BO.logout()" style="color:var(--p-critical);border-color:rgba(255,82,82,0.2);">Déconnexion</a>`
