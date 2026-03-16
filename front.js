@@ -416,8 +416,17 @@ const Front = {
 
 
   /* ---- TIMELINE ---- */
-  renderTimeline() {
+  async renderTimeline() {
     const container = document.getElementById('panelTimeline');
+    // Charger toutes les missions pour la timeline
+    if (!this._tlBugsLoaded) {
+      document.getElementById('tlBoard')?.innerHTML || container.insertAdjacentHTML('beforeend', '');
+      try {
+        const result = await DB.fetchBugs();
+        this._tlBugs = result;
+        this._tlBugsLoaded = true;
+      } catch(e) { return; }
+    }
     const tl = this.timeline;
     const DAY_PX = tl.zoom==='week' ? 60 : tl.zoom==='month' ? 28 : 12;
     const LABEL_W = 200;
@@ -466,7 +475,8 @@ const Front = {
     const tl = this.timeline;
     const DAY_PX  = tl.zoom==='week' ? 60 : tl.zoom==='month' ? 28 : 12;
     const LABEL_W = 200;
-    const bugs    = this.bugs.filter(b => b.date);
+    let bugs    = (this._tlBugs || this.bugs).filter(b => b.date);
+    if (tl.focusMode) bugs = bugs.filter(b => b.state !== 'Résolu' && b.state !== 'Fermé');
     const board   = document.getElementById('tlBoard');
 
     if (!bugs.length) {
@@ -474,7 +484,7 @@ const Front = {
       return;
     }
 
-    const allDates = bugs.flatMap(b=>[b.date,b.due_date].filter(Boolean)).map(d=>new Date(d));
+    const allDates = bugs.flatMap(b=>[b.start_date||b.date, b.due_date].filter(Boolean)).map(d=>new Date(d));
     let minDate = new Date(Math.min(...allDates));
     let maxDate = new Date(Math.max(...allDates));
     if (tl.zoom==='week')    { minDate.setDate(minDate.getDate()-3); maxDate.setDate(maxDate.getDate()+7); }
@@ -537,7 +547,7 @@ const Front = {
         </div>`;
       }
       group.items.forEach(b => {
-        const startX = toX(b.date);
+        const startX = toX(b.start_date || b.date);
         const endX   = b.due_date ? toX(b.due_date) : startX + DAY_PX*3;
         const barW   = Math.max(endX-startX, DAY_PX*0.8);
         const color  = stateColors[b.state] || '#888';
