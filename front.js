@@ -663,6 +663,10 @@ const Front = {
               <div class="detail-field-value">${avatarHtml}</div>
             </div>
             <div class="detail-field">
+              <div class="detail-section-label">Client</div>
+              <div class="detail-field-value">${this._clientBadge(bug.client_id)||'<span style="color:var(--text-faint)">—</span>'}</div>
+            </div>
+            <div class="detail-field">
               <div class="detail-section-label">Date d'arrivée</div>
               <div class="detail-field-value">${this.fmtDate(bug.date)}</div>
             </div>
