@@ -7,8 +7,13 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8a030">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap"></noscript>
   <link rel="stylesheet" href="styles.css">
   <style>
     /* ---- PAGE DEMANDES ---- */
@@ -229,6 +234,12 @@
               </div>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Client</label>
+              <select class="form-select" id="rClient">
+                <option value="">— Aucun client —</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
               <label class="form-label">Titre *</label>
               <input type="text" class="form-input" id="rTitle" placeholder="Résumé de votre demande…" maxlength="120">
             </div>
@@ -275,6 +286,7 @@
     </div>
   </main>
 
+  <script src="utils.js"></script>
   <script src="cache.js"></script>
   <script src="supabase.js"></script>
   <script>
@@ -318,6 +330,18 @@
       };
       sel('rType',     this.config.types);
       sel('rCategory', this.config.categories);
+      // Charger les clients
+      const rClient = document.getElementById('rClient');
+      if (rClient) {
+        try {
+          const clients = await DB.fetchClients();
+          clients.forEach(c => {
+            const o = document.createElement('option');
+            o.value = c.id; o.textContent = c.name;
+            rClient.appendChild(o);
+          });
+        } catch(e) {}
+      }
     },
 
     switchTab(tab) {
@@ -384,7 +408,8 @@
       try {
         const created = await DB.insertRequest({
           title, description: desc, category: cat, type,
-          author_name: name, author_email: email, status: 'pending'
+          author_name: name, author_email: email, status: 'pending',
+          client_id: document.getElementById('rClient')?.value ? parseInt(document.getElementById('rClient').value) : null
         });
         const item = Array.isArray(created) ? created[0] : { title, description: desc, category: cat, type, author_name: name, status: 'pending', created_at: new Date().toISOString() };
         this.all.unshift(item);

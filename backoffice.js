@@ -1345,6 +1345,7 @@ const BO = {
             '<div class="request-admin-meta" style="margin-bottom:8px;">' +
               '<span class="badge badge-type-' + ts(r.type) + '" style="font-size:10px;">' + d(r.type) + '</span>' +
               '<span class="badge badge-cat-' + ts(r.category) + '" style="font-size:10px;">' + d(r.category) + '</span>' +
+              (r.client_id ? this._clientBadge(r.client_id) : '') +
               '<span style="font-size:11px;color:var(--text-muted);">👤 ' + d(r.author_name) + '</span>' +
               '<span style="font-size:11px;color:var(--text-muted);">✉ ' + d(r.author_email) + '</span>' +
               '<span style="font-size:11px;color:var(--text-faint);font-family:DM Mono,monospace;">' + this.fmtDatetime(r.created_at) + '</span>' +
