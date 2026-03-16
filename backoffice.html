@@ -178,18 +178,14 @@
     </div>
 
   <!-- QUICK EDIT MODAL -->
-  <input type="hidden" id="qeBugId">
-  <input type="hidden" id="qeField">
   <div class="modal-overlay hidden" id="qeOverlay">
-    <div class="modal" style="max-width:380px;">
-      <div class="modal-header">
-        <span class="modal-title" id="qeTitle">Modifier</span>
+    <div class="modal" style="max-width:360px;padding:0;">
+      <div class="modal-header" style="padding:14px 16px 12px;">
+        <span class="modal-title" id="qeTitle" style="font-size:13px;">Modifier</span>
         <button class="modal-close" onclick="BO.closeQuickEdit()">✕</button>
       </div>
-      <div class="modal-body" style="padding:20px;">
-        <div id="qeBody"></div>
-      </div>
-      <div class="modal-footer">
+      <div id="qeBody" style="padding:4px 0 8px;max-height:360px;overflow-y:auto;"></div>
+      <div id="qeFooter" class="modal-footer" style="display:none;">
         <button class="btn btn-secondary" onclick="BO.closeQuickEdit()">Annuler</button>
         <button class="btn btn-primary" onclick="BO.confirmQuickEdit()">Enregistrer</button>
       </div>

@@ -903,98 +903,124 @@ const BO = {
     const bug = this.bugs.find(b => b.id === id);
     if (!bug) return;
 
-    // Construire le contenu selon le champ
-    let html = '';
-    const label = {
-      type: 'Type', category: 'Catégorie', priority: 'Priorité',
-      assignee: 'Assigné', client: 'Client',
-      title: 'Titre', start_date: 'Date de début', due_date: 'Échéance'
-    }[field] || field;
+    const labels = { type:'Type', category:'Catégorie', priority:'Priorité',
+                     assignee:'Assigné', client:'Client',
+                     title:'Titre', start_date:'Date de début', due_date:'Échéance' };
 
-    if (field === 'type') {
-      html = `<select class="form-select" id="qeValue">
-        ${this.config.types.map(v => `<option value="${esc(v)}" ${bug.type===v?'selected':''}>${esc(v)}</option>`).join('')}
-      </select>`;
-    } else if (field === 'category') {
-      html = `<select class="form-select" id="qeValue">
-        ${this.config.categories.map(v => `<option value="${esc(v)}" ${bug.category===v?'selected':''}>${esc(v)}</option>`).join('')}
-      </select>`;
-    } else if (field === 'priority') {
-      html = `<select class="form-select" id="qeValue">
-        ${this.config.priorities.map(v => `<option value="${esc(v)}" ${bug.priority===v?'selected':''}>${esc(v)}</option>`).join('')}
-      </select>`;
-    } else if (field === 'assignee') {
-      html = `<select class="form-select" id="qeValue">
-        <option value="">— Non assigné —</option>
-        ${this.members.map(m => `<option value="${esc(m.name)}" ${bug.assignee===m.name?'selected':''}>${esc(m.name)}</option>`).join('')}
-      </select>`;
-    } else if (field === 'client') {
-      html = `<select class="form-select" id="qeValue">
-        <option value="">— Aucun client —</option>
-        ${this.clients.map(c => `<option value="${c.id}" ${bug.client_id==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
-      </select>`;
-    } else if (field === 'title') {
-      html = `<input type="text" class="form-input" id="qeValue" value="${esc(bug.title)}" maxlength="120">`;
-    } else if (field === 'start_date' || field === 'due_date') {
-      const val = bug[field] || '';
-      html = `<input type="date" class="form-input" id="qeValue" value="${val}">`;
+    const overlay = document.getElementById('qeOverlay');
+    overlay.dataset.bugId = id;
+    overlay.dataset.field = field;
+    document.getElementById('qeTitle').textContent = labels[field] || field;
+
+    // Champs texte/date → input simple avec bouton valider
+    if (field === 'title' || field === 'start_date' || field === 'due_date') {
+      const isDate = field !== 'title';
+      document.getElementById('qeBody').innerHTML =
+        `<input type="${isDate?'date':'text'}" class="form-input" id="qeValue"
+          value="${esc(bug[field]||'')}" ${isDate?'':'maxlength="120"'} style="width:100%;">`;
+      document.getElementById('qeFooter').style.display = '';
+      overlay.classList.remove('hidden');
+      setTimeout(() => document.getElementById('qeValue')?.focus(), 50);
+      return;
     }
 
-    // Afficher la modale
-    const overlay = document.getElementById('qeOverlay');
-    document.getElementById('qeTitle').textContent = label;
-    document.getElementById('qeBody').innerHTML = html;
-    document.getElementById('qeBugId').value  = id;
-    document.getElementById('qeField').value  = field;
-    overlay.classList.remove('hidden');
+    // Champs à choix → liste d'options cliquables (comme le menu état)
+    document.getElementById('qeFooter').style.display = 'none';
+    let items = [];
 
-    // Focus auto
-    setTimeout(() => document.getElementById('qeValue')?.focus(), 50);
+    if (field === 'type') {
+      items = this.config.types.map(v => ({
+        value: v, current: bug.type === v,
+        html: `<span class="badge badge-type-${toSlug(v)}">${esc(v)}</span>`
+      }));
+    } else if (field === 'category') {
+      items = this.config.categories.map(v => ({
+        value: v, current: bug.category === v,
+        html: `<span class="badge badge-cat-${toSlug(v)}">${esc(v)}</span>`
+      }));
+    } else if (field === 'priority') {
+      items = this.config.priorities.map(v => ({
+        value: v, current: bug.priority === v,
+        html: `<span class="badge badge-prio-${toSlug(v)}"><span class="badge-dot"></span>${esc(v)}</span>`
+      }));
+    } else if (field === 'assignee') {
+      items = [
+        { value: '', current: !bug.assignee, html: '<span style="color:var(--text-faint)">— Non assigné —</span>' },
+        ...this.members.map(m => {
+          const av = `<span class="avatar" style="background:${m.color};width:20px;height:20px;font-size:9px;">${esc(m.initials)}</span>`;
+          return { value: m.name, current: bug.assignee === m.name,
+                   html: `<span style="display:flex;align-items:center;gap:8px;">${av} ${esc(m.name)}</span>` };
+        })
+      ];
+    } else if (field === 'client') {
+      items = [
+        { value: '', current: !bug.client_id, html: '<span style="color:var(--text-faint)">— Aucun client —</span>' },
+        ...this.clients.map(c => ({
+          value: String(c.id), current: bug.client_id == c.id,
+          html: clientBadge(c.id, this.clients)
+        }))
+      ];
+    }
+
+    document.getElementById('qeBody').innerHTML = items.map(item =>
+      `<div class="action-modal-item ${item.current?'state-modal-current':''}"
+        onclick="BO.pickQuickEdit('${esc(String(item.value))}')">
+        <span class="action-modal-icon">${item.html}</span>
+        ${item.current ? '<span style="margin-left:auto;color:var(--gold-mid);font-size:12px;">✓</span>' : ''}
+      </div>`
+    ).join('');
+
+    overlay.classList.remove('hidden');
   },
 
-  closeQuickEdit() {
-    document.getElementById('qeOverlay').classList.add('hidden');
+  async pickQuickEdit(value) {
+    const overlay = document.getElementById('qeOverlay');
+    const id      = overlay.dataset.bugId;
+    const field   = overlay.dataset.field;
+    const bug     = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    this.closeQuickEdit();
+    await this._saveQuickEdit(id, field, value, bug);
   },
 
   async confirmQuickEdit() {
-    const id    = document.getElementById('qeBugId').value;
-    const field = document.getElementById('qeField').value;
-    const el    = document.getElementById('qeValue');
-    if (!el) return;
-
-    let value = el.value;
-    const bug = this.bugs.find(b => b.id === id);
+    const overlay = document.getElementById('qeOverlay');
+    const id    = overlay.dataset.bugId;
+    const field = overlay.dataset.field;
+    const value = document.getElementById('qeValue')?.value || '';
+    const bug   = this.bugs.find(b => b.id === id);
     if (!bug) return;
 
-    // Construire le delta
-    const data = {};
-    if (field === 'client')     { data.client_id    = value ? parseInt(value) : null; }
-    else if (field === 'start_date' || field === 'due_date') {
-      // Validation dates
-      if (field === 'start_date' && bug.due_date && value > bug.due_date) {
-        this.showNotif('La date de début doit être avant l\'échéance.', true); return;
-      }
-      if (field === 'due_date' && bug.start_date && value && value < bug.start_date) {
-        this.showNotif('L\'échéance doit être après la date de début.', true); return;
-      }
-      data[field] = value || null;
+    // Validation dates
+    if (field === 'start_date' && bug.due_date && value > bug.due_date) {
+      this.showNotif('La date de début doit être avant l\'échéance.', true); return;
     }
-    else { data[field] = value || null; }
+    if (field === 'due_date' && bug.start_date && value && value < bug.start_date) {
+      this.showNotif('L\'échéance doit être après la date de début.', true); return;
+    }
+    this.closeQuickEdit();
+    await this._saveQuickEdit(id, field, value, bug);
+  },
 
-    const btn = document.querySelector('#qeOverlay .btn-primary');
-    btn.textContent = 'Sauvegarde…'; btn.disabled = true;
+  async _saveQuickEdit(id, field, value, bug) {
+    const data = {};
+    if (field === 'client')   { data.client_id = value ? parseInt(value) : null; }
+    else if (field === 'start_date' || field === 'due_date') { data[field] = value || null; }
+    else { data[field] = value || null; }
 
     try {
       const oldVal = bug[field === 'client' ? 'client_id' : field];
       await DB.updateBug(id, data);
       await DB.insertHistory(id, 'Admin', field, String(oldVal||''), String(value||''));
       Object.assign(bug, data);
-      this.closeQuickEdit();
-      this._tlBugsLoaded = false; // invalider cache timeline
+      this._tlBugsLoaded = false;
       this.renderTable();
       this.showNotif('✓ ' + id + ' mis à jour');
     } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
-    finally { btn.textContent = 'Enregistrer'; btn.disabled = false; }
+  },
+
+  closeQuickEdit() {
+    document.getElementById('qeOverlay').classList.add('hidden');
   },
 
 
