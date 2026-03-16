@@ -725,6 +725,100 @@ const BO = {
   toggleTlFocus()   { this.timeline.focusMode=!this.timeline.focusMode; Timeline.render(); },
   scrollTlToday()   { Timeline.scrollTlToday(); },
 
+  // ============================================================
+  // ONGLET DEMANDES
+  // ============================================================
+  renderRequestsTab() {
+    this.updateReqBadge();
+    this.renderReqList();
+  },
+
+  updateReqBadge() {
+    const pending = this.requests.filter(r => r.status === 'pending').length;
+    const badge   = document.getElementById('reqBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending > 0 ? '' : 'none'; }
+    ['pending','accepted','rejected'].forEach(s => {
+      const key = s.charAt(0).toUpperCase() + s.slice(1);
+      const el  = document.getElementById('reqTabCount' + key);
+      if (el) el.textContent = '(' + this.requests.filter(r => r.status === s).length + ')';
+    });
+  },
+
+  switchReqTab(tab) {
+    this.currentReqTab = tab;
+    ['pending','accepted','rejected'].forEach(t => {
+      const key = t.charAt(0).toUpperCase() + t.slice(1);
+      document.getElementById('reqTab' + key)?.classList.toggle('tab-active', t === tab);
+    });
+    this.renderReqList();
+  },
+
+  renderReqList() {
+    const el = document.getElementById('reqAdminList');
+    if (!el) return;
+    const filtered = this.requests.filter(r => r.status === this.currentReqTab);
+    const pending  = this.requests.filter(r => r.status === 'pending').length;
+    const accepted = this.requests.filter(r => r.status === 'accepted').length;
+    const rejected = this.requests.filter(r => r.status === 'rejected').length;
+
+    const statsBar = '<div class="req-stats-bar">' +
+      '<div class="req-stat"><span class="req-stat-num" style="color:#ffd040;">' + pending + '</span><span>en attente</span></div>' +
+      '<div style="width:1px;background:var(--border-dim);"></div>' +
+      '<div class="req-stat"><span class="req-stat-num" style="color:#70d060;">' + accepted + '</span><span>acceptees</span></div>' +
+      '<div style="width:1px;background:var(--border-dim);"></div>' +
+      '<div class="req-stat"><span class="req-stat-num" style="color:var(--text-faint);">' + rejected + '</span><span>refusees</span></div>' +
+    '</div>';
+
+    if (!filtered.length) {
+      const msgs = { pending:'Aucune demande en attente.', accepted:'Aucune demande acceptee.', rejected:'Aucune demande refusee.' };
+      el.innerHTML = statsBar + '<div class="empty-state"><span class="empty-icon">&#x1F4E5;</span><p>' + msgs[this.currentReqTab] + '</p></div>';
+      return;
+    }
+
+    const items = filtered.map(r => {
+      const isPending   = r.status === 'pending';
+      const accentColor = isPending ? '#ffd040' : r.status === 'accepted' ? '#70d060' : '#555';
+      const initials    = (r.author_name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      const actions = isPending
+        ? '<div class="req-item-actions">' +
+            '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;" onclick="BO.openAcceptModal(' + r.id + ')">Accepter</button>' +
+            '<button class="btn btn-secondary" style="font-size:12px;padding:6px 14px;color:var(--text-muted);" onclick="BO.rejectRequest(' + r.id + ')">Refuser</button>' +
+          '</div>'
+        : r.status === 'accepted'
+          ? '<span class="req-accepted-label">Acceptee</span>'
+          : '<span class="req-rejected-label">Refusee</span>';
+
+      return '<div class="req-item">' +
+        '<div class="req-item-head">' +
+          '<div class="req-item-accent" style="background:' + accentColor + ';"></div>' +
+          '<div class="req-item-body">' +
+            '<div class="req-item-title">' + esc(r.title) + '</div>' +
+            '<div class="req-item-tags">' +
+              '<span class="badge badge-type-' + toSlug(r.type)     + '" style="font-size:10px;">' + esc(r.type)     + '</span>' +
+              '<span class="badge badge-cat-'  + toSlug(r.category) + '" style="font-size:10px;">' + esc(r.category) + '</span>' +
+              clientBadge(r.client_id, this.clients) +
+            '</div>' +
+          '</div>' +
+          (isPending ? actions : '<div style="flex-shrink:0;">' + actions + '</div>') +
+        '</div>' +
+        '<div class="req-item-desc">' + esc(r.description) + '</div>' +
+        '<div class="req-item-footer">' +
+          '<div class="req-item-author">' +
+            '<div class="req-item-initials">' + initials + '</div>' +
+            '<strong style="color:var(--text-base);">' + esc(r.author_name) + '</strong>' +
+            '<span>·</span>' +
+            '<span>' + esc(r.author_email) + '</span>' +
+          '</div>' +
+          '<span style="font-size:10px;color:var(--text-faint);font-family:monospace;">' + fmtDatetime(r.created_at) + '</span>' +
+          (isPending ? actions : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    el.innerHTML = statsBar + '<div class="req-list">' + items + '</div>';
+  },
+
+
   openAcceptModal(reqId) {
     document.getElementById('acceptReqId').value = reqId;
     const ps = document.getElementById('acceptPriority');
