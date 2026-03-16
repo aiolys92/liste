@@ -715,6 +715,15 @@ const Front = {
     document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
   },
 
+  _clientBadge(clientId) {
+    if (!clientId) return '';
+    const c = this.clients.find(x => x.id == clientId);
+    if (!c) return '';
+    const bg  = c.color + '20';
+    const brd = c.color + '50';
+    return `<span class="client-badge" style="background:${bg};border-color:${brd};color:${c.color};">${this.esc(c.name)}</span>`;
+  },
+
   toSlug(str){return String(str).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');},
   fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});},
   fmtDatetime(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});},
