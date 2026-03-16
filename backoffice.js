@@ -442,6 +442,15 @@ const BO = {
     document.getElementById('fTitle').focus();
     this._formDirty = false;
     this._bindFormDirty();
+    // Contraintes dates
+    document.getElementById('fStartDate')?.addEventListener('change', e => {
+      const due = document.getElementById('fDueDate');
+      if (due) due.min = e.target.value || '';
+    });
+    document.getElementById('fDueDate')?.addEventListener('change', e => {
+      const start = document.getElementById('fStartDate');
+      if (start) start.max = e.target.value || '';
+    });
   },
 
   openEdit(id) {
