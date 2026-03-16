@@ -536,6 +536,7 @@ const BO = {
       state:   document.getElementById('fState').value,
       assignee:document.getElementById('fAssignee').value||null,
       title, description, date,
+      start_date:      document.getElementById('fStartDate')?.value||null,
       due_date:document.getElementById('fDueDate').value||null,
       ref_url:         document.getElementById('fRefUrl')?.value.trim()||null,
       target_version:  document.getElementById('fTargetVersion')?.value.trim()||null,
