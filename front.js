@@ -52,7 +52,26 @@ const Front = {
     if(btn)btn.textContent=isLight?'🌙':'☀️';
   },
 
-  showLoading(on){const el=document.getElementById('loadingRow');if(el)el.style.display=on?'':'none';},
+  showLoading(on) {
+    const tbody = document.getElementById('bugsTableBody');
+    if (!tbody) return;
+    if (on) {
+      tbody.innerHTML = this._skeletonRows(8, ['90px','115px','94px','100%','106px','124px','44px','96px','88px','44px']);
+    } else {
+      const lr = document.getElementById('loadingRow');
+      if (lr) lr.style.display = 'none';
+    }
+  },
+  // ---- SKELETON SCREENS ----
+  _skeletonRows(count, cols) {
+    return Array(count).fill(0).map((_, i) =>
+      `<tr class="skeleton-row" style="animation-delay:${i*0.06}s">
+        ${cols.map(w => `<td><span class="skeleton-line" style="width:${w};height:18px;display:block;border-radius:4px;"></span></td>`).join('')}
+      </tr>`
+    ).join('');
+  },
+
+
   showError(msg){const el=document.getElementById('errorBanner');if(el){el.textContent=msg;el.style.display='block';}},
 
   populateFilters() {
@@ -101,18 +120,31 @@ const Front = {
   },
 
   switchView(v) {
-    this.view=v;
+    const prev = this.view;
+    this.view = v;
+
     ['list','kanban','timeline'].forEach(name => {
-      const btn = document.getElementById('btnView'+name.charAt(0).toUpperCase()+name.slice(1));
-      const panel = document.getElementById('panel'+name.charAt(0).toUpperCase()+name.slice(1));
-      if(btn)   btn.classList.toggle('view-btn-active', v===name);
-      if(panel) panel.style.display = v===name ? '' : 'none';
+      const btn   = document.getElementById('btnView' + name.charAt(0).toUpperCase() + name.slice(1));
+      const panel = document.getElementById('panel'   + name.charAt(0).toUpperCase() + name.slice(1));
+      if (btn) btn.classList.toggle('view-btn-active', v === name);
+      if (panel) {
+        if (v === name) {
+          panel.style.display = '';
+          panel.classList.remove('view-panel-out');
+          panel.classList.add('view-panel');
+          // Retirer la classe après l'animation
+          setTimeout(() => panel.classList.remove('view-panel'), 300);
+        } else {
+          panel.style.display = 'none';
+          panel.classList.remove('view-panel');
+        }
+      }
     });
-    // Masquer les filtres en timeline (la timeline a ses propres contrôles)
+
     const fb = document.getElementById('filtersBar');
-    if(fb) fb.style.display = v==='timeline' ? 'none' : '';
-    if(v==='kanban')   this.renderKanban();
-    if(v==='timeline') this.renderTimeline();
+    if (fb) fb.style.display = v === 'timeline' ? 'none' : '';
+    if (v === 'kanban')   this.renderKanban();
+    if (v === 'timeline') this.renderTimeline();
   },
 
   renderStats() {
@@ -425,7 +457,17 @@ const Front = {
 
     let rowsHtml = '';
     groups.forEach(group => {
-      if (group.label !== null) rowsHtml += `<div class="tl-group-header"><span>${this.esc(group.label)}</span></div>`;
+      if (group.label !== null) {
+        rowsHtml += `<div class="tl-group-header-row">
+          <div class="tl-label tl-group-label">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
+              letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);">
+              ${this.esc(group.label)}
+            </span>
+          </div>
+          <div style="flex:1;background:var(--bg-raised);border-bottom:1px solid var(--border-base);"></div>
+        </div>`;
+      }
       group.items.forEach(b => {
         const startX = toX(b.date);
         const endX   = b.due_date ? toX(b.due_date) : startX + DAY_PX*3;

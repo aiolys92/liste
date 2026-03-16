@@ -62,7 +62,26 @@ const BO = {
     });
   },
 
-  showLoading(on) { const el=document.getElementById('loadingRow'); if(el) el.style.display=on?'':'none'; },
+  showLoading(on) {
+    const tbody = document.getElementById('bugsTableBody');
+    if (!tbody) return;
+    if (on) {
+      tbody.innerHTML = this._skeletonRows(8, ['34px','88px','112px','94px','100%','106px','130px','44px','96px','88px','46px']);
+    } else {
+      const lr = document.getElementById('loadingRow');
+      if (lr) lr.style.display = 'none';
+    }
+  },
+  // ---- SKELETON SCREENS ----
+  _skeletonRows(count, cols) {
+    return Array(count).fill(0).map((_, i) =>
+      `<tr class="skeleton-row" style="animation-delay:${i*0.06}s">
+        ${cols.map(w => `<td><span class="skeleton-line" style="width:${w};height:18px;display:block;border-radius:4px;"></span></td>`).join('')}
+      </tr>`
+    ).join('');
+  },
+
+
 
   // ============================================================
   // THEME
@@ -418,6 +437,8 @@ const BO = {
     document.getElementById('blocksPreview').innerHTML='';
     document.getElementById('modalOverlay').classList.remove('hidden');
     document.getElementById('fTitle').focus();
+    this._formDirty = false;
+    this._bindFormDirty();
   },
 
   openEdit(id) {
@@ -441,6 +462,8 @@ const BO = {
     this.updateBlocksPreview();
     document.getElementById('modalOverlay').classList.remove('hidden');
     document.getElementById('fTitle').focus();
+    this._formDirty = false;
+    this._bindFormDirty();
   },
 
   updateBlocksPreview() {
@@ -451,7 +474,36 @@ const BO = {
     ).join('');
   },
 
-  closeModal(){ document.getElementById('modalOverlay').classList.add('hidden'); },
+  _formDirty: false,
+
+  _bindFormDirty() {
+    const fields = ['fTitle','fDescription','fType','fCategory','fPriority','fState','fAssignee','fDueDate','fDate','fRefUrl'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => {
+        this._formDirty = true;
+        // Afficher badge non sauvegardé
+        let badge = document.getElementById('unsavedBadge');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.id = 'unsavedBadge';
+          badge.className = 'unsaved-badge';
+          badge.textContent = '● Non sauvegardé';
+          document.getElementById('modalTitle')?.after(badge);
+        }
+      }, { once: false });
+    });
+  },
+
+  closeModal() {
+    if (this._formDirty) {
+      if (!confirm('Vous avez des modifications non sauvegardées. Quitter quand même ?')) return;
+    }
+    this._formDirty = false;
+    const badge = document.getElementById('unsavedBadge');
+    if (badge) badge.remove();
+    document.getElementById('modalOverlay').classList.add('hidden');
+  },
 
   async save() {
     const id=document.getElementById('editId').value;
@@ -495,6 +547,7 @@ const BO = {
         this.bugs.unshift(Array.isArray(created)?created[0]:{id:newId,...data});
         this.showNotif(`✓ Mission ${newId} créée`);
       }
+      this._formDirty = false;
       this.closeModal(); this.renderStats(); this.render();
     } catch(e){this.showNotif('Erreur : '+e.message,true);}
     finally{btn.textContent='Enregistrer';btn.disabled=false;}
