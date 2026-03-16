@@ -1165,7 +1165,10 @@ const BO = {
   openActionModal(id) {
     const bug = this.bugs.find(b => b.id === id);
     if (!bug) return;
-    document.getElementById('actionModalTitle').textContent = bug.id + ' — ' + bug.title;
+    const subtitle = document.getElementById('actionModalSubtitle');
+    const title    = document.getElementById('actionModalTitle');
+    if (subtitle) subtitle.textContent = bug.id;
+    if (title)    title.textContent    = bug.title;
     document.getElementById('actionBugId').value = id;
     document.getElementById('actionModalOverlay').classList.remove('hidden');
   },
