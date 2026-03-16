@@ -16,6 +16,11 @@ const Front = {
   filters: { type:'', priority:'', state:'', search:'', client_id:'' },
 
   async init() {
+    // Initialiser les modules partagés
+    Detail.setup(this);
+    Comments.setup(this, false);
+    Kanban.setup(this, 'Front');
+    Timeline.setup(this, 'Front');
     this.showLoading(true);
     try {
       // 1. Charger bugs en priorité — afficher le tableau le plus vite possible
