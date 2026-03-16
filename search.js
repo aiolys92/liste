@@ -7,20 +7,21 @@ const GlobalSearch = {
   selectedIdx: -1,
   results: [],
 
-  async init() {
-    // Charger les bugs pour la recherche
-    try {
-      const cached = Cache.get('search_bugs');
-      if (cached) { this.bugs = cached; }
-      else {
-        const res = await DB.fetchBugs();
-        this.bugs = res;
-        Cache.set('search_bugs', res);
-      }
-    } catch(e) {}
-
+  init() {
+    // Ne pas charger les bugs au démarrage — chargement lazy au premier Cmd+K
     this._injectUI();
     this._bindKeys();
+  },
+
+  async _loadBugs() {
+    if (this.bugs.length) return; // déjà chargés
+    try {
+      const cached = typeof Cache !== 'undefined' && Cache.get('search_bugs');
+      if (cached) { this.bugs = cached; return; }
+      const res = await DB.fetchBugs();
+      this.bugs = res;
+      if (typeof Cache !== 'undefined') Cache.set('search_bugs', res);
+    } catch(e) {}
   },
 
   _injectUI() {
@@ -72,13 +73,15 @@ const GlobalSearch = {
 
   toggle() { this.open ? this.close() : this.show(); },
 
-  show() {
+  async show() {
     this.open = true;
     const overlay = document.getElementById('gs-overlay');
     overlay.style.display = 'flex';
     document.getElementById('gs-input').value = '';
     document.getElementById('gs-results').innerHTML = this._renderEmpty('Tapez pour rechercher…');
     setTimeout(() => document.getElementById('gs-input').focus(), 50);
+    // Chargement lazy des bugs
+    await this._loadBugs();
   },
 
   close() {
