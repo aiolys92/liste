@@ -964,10 +964,21 @@ const BO = {
         <div class="config-add-row" style="flex-direction:column;align-items:stretch;gap:8px;">
           <input type="text" class="form-input" id="newClientName" placeholder="Nom du client…" maxlength="60">
           <input type="text" class="form-input" id="newClientContact" placeholder="Contact (optionnel)…" maxlength="80">
-          <div style="display:flex;gap:8px;">
-            <select class="form-select" id="newClientColor" style="flex:1;">
-              ${COLORS.map(c=>`<option value="${c}" style="background:${c}">${c}</option>`).join('')}
-            </select>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;flex:1;">
+              ${COLORS.map((c,i) => `
+                <label style="cursor:pointer;position:relative;" title="${c}">
+                  <input type="radio" name="clientColor" value="${c}"
+                    ${i===0?'checked':''} style="position:absolute;opacity:0;width:0;height:0;">
+                  <span onclick="document.querySelectorAll('[name=clientColor]').forEach(r=>r.closest('label').querySelector('span').style.outline='none');this.style.outline='2px solid var(--gold-mid)';this.style.outlineOffset='2px';document.querySelector('[name=clientColor][value=\'${c}\']').checked=true;"
+                    style="display:block;width:22px;height:22px;border-radius:50%;background:${c};
+                    outline:${i===0?'2px solid var(--gold-mid)':'none'};outline-offset:2px;
+                    transition:transform 0.15s,outline 0.15s;"
+                    onmouseover="this.style.transform='scale(1.15)'"
+                    onmouseout="this.style.transform=''">
+                  </span>
+                </label>`).join('')}
+            </div>
             <button class="btn btn-primary" onclick="BO.addClientItem()">+ Ajouter</button>
           </div>
         </div>
@@ -977,7 +988,8 @@ const BO = {
   async addClientItem() {
     const name    = document.getElementById('newClientName').value.trim();
     const contact = document.getElementById('newClientContact').value.trim();
-    const color   = document.getElementById('newClientColor').value;
+    const colorRadio = document.querySelector('[name=clientColor]:checked');
+    const color = colorRadio ? colorRadio.value : '#50b8ff';
     if (!name) { this.showNotif('Remplissez le nom du client.', true); return; }
     try {
       const created = await DB.insertClient({ name, contact: contact||null, color });
