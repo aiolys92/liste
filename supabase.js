@@ -34,35 +34,15 @@ const DB = {
   },
 
   async fetchBugsPaged({ page=1, perPage=20, filters={}, sort='date', dir='desc', includeArchived=false } = {}) {
-    const from  = (page-1)*perPage;
-    const to    = from + perPage - 1;
-    const q     = this._buildBugsQuery(filters, sort, dir, includeArchived);
-
-    // Fetch data + count en parallèle
-    const dataHeaders  = { ...SUPABASE_HEADERS, 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
-    const countHeaders = { ...SUPABASE_HEADERS, 'Prefer': 'count=exact', 'Range': '0-0', 'Range-Unit': 'items' };
-
-    const hasFilters = Object.values(filters).some(v => v);
-    const cacheKey   = hasFilters ? null : `bugs_count_p${page}`;
-
-    // Pour la page 1 sans filtres, utiliser le cache du count
-    let cachedCount = cacheKey && typeof Cache !== 'undefined' ? Cache.get(cacheKey) : null;
-
-    const [dataRes, countRes] = await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: dataHeaders }),
-      cachedCount !== null ? Promise.resolve(null) : fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: countHeaders })
-    ]);
-
-    if (!dataRes.ok) throw new Error(`Fetch paged error ${dataRes.status}`);
-    const data = await dataRes.json();
-
-    let total = cachedCount;
-    if (countRes) {
-      const range = countRes.headers.get('Content-Range') || '';
-      total = parseInt(range.split('/')[1]) || data.length;
-      if (cacheKey && typeof Cache !== 'undefined') Cache.set(cacheKey, total);
-    }
-
+    const from = (page-1)*perPage;
+    const to   = from + perPage - 1;
+    const q    = this._buildBugsQuery(filters, sort, dir, includeArchived);
+    const heads = { ...SUPABASE_HEADERS, 'Prefer': 'count=exact', 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
+    const res  = await fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: heads });
+    if (!res.ok) throw new Error(`Fetch paged error ${res.status}`);
+    const range = res.headers.get('Content-Range') || '';
+    const total = parseInt(range.split('/')[1]) || 0;
+    const data  = await res.json();
     return { data, total };
   },
 
