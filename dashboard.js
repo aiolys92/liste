@@ -91,42 +91,24 @@ const Dashboard = {
         </div>
 
         <div class="db-card db-card-timeline">
-          <div class="db-card-label">Activité — 8 semaines</div>
-          ${this._timeline()}
+          <div class="db-card-label" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span>Historique d'activité</span>
+            <div style="display:flex;gap:4px;">
+              <button id="tlBtnWeek"  onclick="Dashboard.setTimelineMode('week')"
+                style="font-size:11px;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border:1px solid var(--gold-dim);background:var(--gold-ghost);color:var(--gold-bright);">
+                Semaines
+              </button>
+              <button id="tlBtnMonth" onclick="Dashboard.setTimelineMode('month')"
+                style="font-size:11px;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;border:1px solid var(--border-base);background:var(--bg-raised);color:var(--text-muted);">
+                Mois
+              </button>
+            </div>
+          </div>
+          <div id="tlContent">${this._timeline('week')}</div>
         </div>
 
       </div>
     `;
-
-    // Stats clients
-    if (typeof DB !== 'undefined') {
-      DB.fetchClients().then(clients => {
-        if (!clients.length) return;
-        const clientStats = clients.map(c => {
-          const assigned = this.bugs.filter(x => x.client_id == c.id);
-          const done     = assigned.filter(x => x.state==='Résolu'||x.state==='Fermé').length;
-          const rate     = assigned.length ? Math.round(done/assigned.length*100) : 0;
-          return { ...c, total: assigned.length, done, rate };
-        }).filter(c => c.total > 0).sort((a,b)=>b.total-a.total);
-
-        if (!clientStats.length) return;
-        const clientsHtml = `<div class="db-card" style="margin-top:14px;">
-          <div class="db-card-label">Charge par client</div>
-          <div class="db-members-grid">
-            ${clientStats.map(c => `
-              <div class="db-member-card">
-                <span class="client-badge-dot" style="background:${c.color};width:12px;height:12px;border-radius:50%;flex-shrink:0;"></span>
-                <div class="db-member-info">
-                  <div class="db-member-name">${c.name}</div>
-                  <div class="db-member-stats">${c.total} mission${c.total>1?'s':''} · ${c.done} résolues</div>
-                </div>
-                <div class="db-member-rate" style="color:${c.color}" title="Taux de résolution">${c.rate}%</div>
-              </div>`).join('')}
-          </div>
-        </div>`;
-        document.getElementById('dashContent').insertAdjacentHTML('beforeend', clientsHtml);
-      }).catch(()=>{});
-    }
 
     // Stats membres
     if (typeof DB !== 'undefined') {
@@ -391,241 +373,183 @@ const Dashboard = {
     }).join('') + `</div>`;
   },
 
-  _timeline() {
+  setTimelineMode(mode) {
+    this._tlMode = mode;
+    const el = document.getElementById('tlContent');
+    if (el) el.innerHTML = this._timeline(mode);
+    // Mettre à jour les boutons
+    const w = document.getElementById('tlBtnWeek');
+    const m = document.getElementById('tlBtnMonth');
+    if (w) { w.style.background = mode==='week' ? 'var(--gold-ghost)' : 'var(--bg-raised)'; w.style.color = mode==='week' ? 'var(--gold-bright)' : 'var(--text-muted)'; w.style.borderColor = mode==='week' ? 'var(--gold-dim)' : 'var(--border-base)'; }
+    if (m) { m.style.background = mode==='month' ? 'var(--gold-ghost)' : 'var(--bg-raised)'; m.style.color = mode==='month' ? 'var(--gold-bright)' : 'var(--text-muted)'; m.style.borderColor = mode==='month' ? 'var(--gold-dim)' : 'var(--border-base)'; }
+  },
+
+  _timeline(mode) {
+    mode = mode || this._tlMode || 'week';
+    return mode === 'week' ? this._timelineWeeks() : this._timelineMonths();
+  },
+
+  _timelineWeeks() {
     const b     = this.bugs;
     const today = new Date(); today.setHours(0,0,0,0);
 
-    // Générer 30 jours
-    const days = [];
-    for (let i = 29; i >= 0; i--) {
-      const d    = new Date(today); d.setDate(d.getDate()-i);
-      const next = new Date(d);     next.setDate(next.getDate()+1);
-      const isToday = i === 0;
-      const isWeekend = d.getDay()===0 || d.getDay()===6;
-      days.push({
-        label:    d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}),
-        created:  b.filter(x => x.created_at && new Date(x.created_at)>=d && new Date(x.created_at)<next).length,
-        resolved: b.filter(x => x.created_at && new Date(x.created_at)>=d && new Date(x.created_at)<next && (x.state==='Résolu'||x.state==='Fermé')).length,
-        isToday,
-        isWeekend
+    // 12 semaines glissantes
+    const weeks = [];
+    for (let i = 11; i >= 0; i--) {
+      const from = new Date(today); from.setDate(from.getDate() - i*7 - from.getDay() + 1); from.setHours(0,0,0,0);
+      const to   = new Date(from);  to.setDate(to.getDate()+7);
+      const isCurrent = i === 0;
+      weeks.push({
+        label:    `S${-i||'0'} ${from.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'})}`,
+        short:    from.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}),
+        created:  b.filter(x => x.created_at && new Date(x.created_at)>=from && new Date(x.created_at)<to).length,
+        resolved: b.filter(x => x.created_at && new Date(x.created_at)>=from && new Date(x.created_at)<to && (x.state==='Résolu'||x.state==='Fermé')).length,
+        isCurrent
       });
     }
 
-    const maxVal = Math.max(...days.map(d=>Math.max(d.created,d.resolved)), 1);
-    const H=100, BAR=10, GAP=3, STEP=BAR*2+GAP+2;
-    const totalW = 30*STEP - GAP;
+    const maxVal = Math.max(...weeks.map(w=>Math.max(w.created,w.resolved)), 1);
+    const H=90, BAR=12, GAP=2, STEP=BAR*2+GAP+4;
+    const totalW = 12*STEP;
+    const total12  = weeks.reduce((s,w)=>s+w.created,0);
+    const resolved12 = weeks.reduce((s,w)=>s+w.resolved,0);
+    const trend = weeks[11].created > weeks[10].created ? '↑' : weeks[11].created < weeks[10].created ? '↓' : '→';
+    const trendColor = trend==='↑' ? '#ff9040' : trend==='↓' ? '#70d060' : '#888';
 
-    // Sparkline de la tendance (courbe lissée des créations)
-    const sparkPoints = days.map((d,i) => {
-      const x = i*STEP + BAR;
-      const y = H - (d.created ? Math.max(4, Math.round((d.created/maxVal)*H)) : 0);
-      return `${x},${y}`;
-    }).join(' ');
-
-    const cols = days.map((d,i) => {
-      const hC = d.created  ? Math.max(3, Math.round((d.created/maxVal)*H))  : 0;
-      const hR = d.resolved ? Math.max(3, Math.round((d.resolved/maxVal)*H)) : 0;
+    const cols = weeks.map((w,i) => {
+      const hC = w.created  ? Math.max(3, Math.round((w.created/maxVal)*H))  : 0;
+      const hR = w.resolved ? Math.max(3, Math.round((w.resolved/maxVal)*H)) : 0;
       const x  = i*STEP;
-      const showLabel = i===0 || i===7 || i===14 || i===21 || i===29 || d.isToday;
       return `<g>
-        ${d.isWeekend ? `<rect x="${x-1}" y="0" width="${STEP}" height="${H}" fill="rgba(255,255,255,0.015)" rx="0"/>` : ''}
-        ${d.isToday   ? `<rect x="${x-1}" y="0" width="${STEP+2}" height="${H}" fill="rgba(200,160,48,0.06)" rx="2"/>` : ''}
+        ${w.isCurrent ? `<rect x="${x-1}" y="0" width="${STEP+1}" height="${H}" fill="rgba(200,160,48,0.06)" rx="2"/>` : ''}
         <rect x="${x}" y="${H-hC}" width="${BAR}" height="${hC}"
-          fill="${d.isToday?'#f0c84a':'#50b8ff'}" opacity="${d.isToday?'0.9':'0.7'}" rx="2">
-          <title>${d.label} — Créées: ${d.created}</title></rect>
+          fill="${w.isCurrent?'#f0c84a':'#50b8ff'}" opacity="0.75" rx="2">
+          <title>Sem. ${w.short} — Créées: ${w.created}</title></rect>
         <rect x="${x+BAR+1}" y="${H-hR}" width="${BAR}" height="${hR}"
-          fill="#70d060" opacity="0.7" rx="2">
-          <title>${d.label} — Résolues: ${d.resolved}</title></rect>
-        ${showLabel ? `<text x="${x+BAR}" y="${H+13}" text-anchor="middle"
-          style="font-size:8px;font-family:'DM Mono',monospace;fill:${d.isToday?'var(--gold-mid)':'var(--text-faint)'}">
-          ${d.isToday?'Auj.':d.label}</text>` : ''}
+          fill="#70d060" opacity="0.75" rx="2">
+          <title>Sem. ${w.short} — Résolues: ${w.resolved}</title></rect>
+        ${i%3===0 || w.isCurrent ? `<text x="${x+BAR}" y="${H+13}" text-anchor="middle"
+          style="font-size:8px;font-family:'DM Mono',monospace;fill:${w.isCurrent?'var(--gold-mid)':'var(--text-faint)'}">${w.isCurrent?'Sem. en cours':w.short}</text>` : ''}
       </g>`;
     }).join('');
 
-    // Totaux sur 30j
-    const total30  = days.reduce((s,d)=>s+d.created, 0);
-    const resolved30 = days.reduce((s,d)=>s+d.resolved, 0);
-    const avgPerDay  = (total30/30).toFixed(1);
-
     return `<div>
-      <div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="display:flex;gap:20px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <div style="font-size:12px;color:var(--text-muted);">
-          <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#50b8ff;">${total30}</span>
-          <span style="margin-left:5px;">créées</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#50b8ff;">${total12}</span>
+          <span style="margin-left:4px;">créées / 12 sem.</span>
         </div>
         <div style="font-size:12px;color:var(--text-muted);">
-          <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#70d060;">${resolved30}</span>
-          <span style="margin-left:5px;">résolues</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#70d060;">${resolved12}</span>
+          <span style="margin-left:4px;">résolues</span>
         </div>
         <div style="font-size:12px;color:var(--text-muted);">
-          <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--text-bright);">${avgPerDay}</span>
-          <span style="margin-left:5px;">/ jour en moyenne</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${trendColor};">${trend}</span>
+          <span style="margin-left:4px;">tendance</span>
         </div>
       </div>
       <div style="overflow-x:auto;">
-        <svg width="100%" viewBox="-20 0 ${totalW+24} ${H+20}" style="min-width:500px;overflow:visible;">
-          ${[0.25,0.5,0.75,1].map(f=>`
-            <line x1="0" y1="${H-f*H}" x2="${totalW}" y2="${H-f*H}"
-              stroke="var(--border-dim)" stroke-width="0.5" stroke-dasharray="2 3"/>
-            <text x="-4" y="${H-f*H+3}" text-anchor="end"
-              style="font-size:8px;font-family:'DM Mono',monospace;fill:var(--text-faint)">${Math.round(f*maxVal)}</text>
+        <svg width="100%" viewBox="-20 0 ${totalW+24} ${H+20}" style="min-width:400px;overflow:visible;">
+          ${[0.25,0.5,1].map(f=>`
+            <line x1="0" y1="${H-f*H}" x2="${totalW}" y2="${H-f*H}" stroke="var(--border-dim)" stroke-width="0.5" stroke-dasharray="2 3"/>
+            <text x="-4" y="${H-f*H+3}" text-anchor="end" style="font-size:8px;font-family:'DM Mono',monospace;fill:var(--text-faint)">${Math.round(f*maxVal)}</text>
           `).join('')}
           <line x1="0" y1="${H}" x2="${totalW}" y2="${H}" stroke="var(--border-base)" stroke-width="0.5"/>
           ${cols}
         </svg>
       </div>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted);flex-wrap:wrap;">
-        <span style="display:flex;align-items:center;gap:5px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:#50b8ff;display:inline-block;"></span>Créées
-        </span>
-        <span style="display:flex;align-items:center;gap:5px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:#70d060;display:inline-block;"></span>Résolues
-        </span>
-        <span style="display:flex;align-items:center;gap:5px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:var(--gold-mid);display:inline-block;"></span>Aujourd'hui
-        </span>
-        <span style="margin-left:auto;font-size:10px;color:var(--text-faint);">30 derniers jours</span>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted);">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#50b8ff;display:inline-block;"></span>Créées</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#70d060;display:inline-block;"></span>Résolues</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--text-faint);">12 dernières semaines</span>
+      </div>
+    </div>`;
+  },
+
+  _timelineMonths() {
+    const b     = this.bugs;
+    const today = new Date();
+
+    // 12 mois glissants
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const d    = new Date(today.getFullYear(), today.getMonth()-i, 1);
+      const next = new Date(d.getFullYear(), d.getMonth()+1, 1);
+      const isCurrent = i === 0;
+      months.push({
+        label:    d.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}),
+        created:  b.filter(x => x.created_at && new Date(x.created_at)>=d && new Date(x.created_at)<next).length,
+        resolved: b.filter(x => x.created_at && new Date(x.created_at)>=d && new Date(x.created_at)<next && (x.state==='Résolu'||x.state==='Fermé')).length,
+        isCurrent
+      });
+    }
+
+    const maxVal = Math.max(...months.map(m=>Math.max(m.created,m.resolved)), 1);
+    const H=90, BAR=14, GAP=3, STEP=BAR*2+GAP+6;
+    const totalW = 12*STEP;
+    const total12 = months.reduce((s,m)=>s+m.created,0);
+    const resolved12 = months.reduce((s,m)=>s+m.resolved,0);
+    const avgMonth = (total12/12).toFixed(1);
+
+    // Ligne de tendance (moyenne mobile)
+    const avgLine = months.map((m,i) => {
+      if (i < 2) return null;
+      const avg = (months[i-2].created + months[i-1].created + m.created) / 3;
+      const x = i*STEP + BAR;
+      const y = H - (avg/maxVal)*H;
+      return `${x},${y}`;
+    }).filter(Boolean).join(' ');
+
+    const cols = months.map((m,i) => {
+      const hC = m.created  ? Math.max(3, Math.round((m.created/maxVal)*H))  : 0;
+      const hR = m.resolved ? Math.max(3, Math.round((m.resolved/maxVal)*H)) : 0;
+      const x  = i*STEP;
+      return `<g>
+        ${m.isCurrent ? `<rect x="${x-1}" y="0" width="${STEP+1}" height="${H}" fill="rgba(200,160,48,0.07)" rx="2"/>` : ''}
+        <rect x="${x}" y="${H-hC}" width="${BAR}" height="${hC}"
+          fill="${m.isCurrent?'#f0c84a':'#50b8ff'}" opacity="0.75" rx="2">
+          <title>${m.label} — Créées: ${m.created}</title></rect>
+        <rect x="${x+BAR+1}" y="${H-hR}" width="${BAR}" height="${hR}"
+          fill="#70d060" opacity="0.75" rx="2">
+          <title>${m.label} — Résolues: ${m.resolved}</title></rect>
+        <text x="${x+BAR}" y="${H+13}" text-anchor="middle"
+          style="font-size:8px;font-family:'DM Mono',monospace;fill:${m.isCurrent?'var(--gold-mid)':'var(--text-faint)'}">${m.label}</text>
+      </g>`;
+    }).join('');
+
+    return `<div>
+      <div style="display:flex;gap:20px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#50b8ff;">${total12}</span>
+          <span style="margin-left:4px;">créées / 12 mois</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#70d060;">${resolved12}</span>
+          <span style="margin-left:4px;">résolues</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--text-bright);">${avgMonth}</span>
+          <span style="margin-left:4px;">/ mois en moyenne</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <svg width="100%" viewBox="-20 0 ${totalW+24} ${H+20}" style="min-width:400px;overflow:visible;">
+          ${[0.25,0.5,1].map(f=>`
+            <line x1="0" y1="${H-f*H}" x2="${totalW}" y2="${H-f*H}" stroke="var(--border-dim)" stroke-width="0.5" stroke-dasharray="2 3"/>
+            <text x="-4" y="${H-f*H+3}" text-anchor="end" style="font-size:8px;font-family:'DM Mono',monospace;fill:var(--text-faint)">${Math.round(f*maxVal)}</text>
+          `).join('')}
+          <line x1="0" y1="${H}" x2="${totalW}" y2="${H}" stroke="var(--border-base)" stroke-width="0.5"/>
+          ${cols}
+          ${avgLine ? `<polyline points="${avgLine}" fill="none" stroke="rgba(200,160,48,0.5)" stroke-width="1.5" stroke-dasharray="4 2"/>` : ''}
+        </svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted);">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#50b8ff;display:inline-block;"></span>Créées</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#70d060;display:inline-block;"></span>Résolues</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:16px;height:2px;background:rgba(200,160,48,0.6);display:inline-block;border-radius:1px;"></span>Tendance (moy. mobile 3 mois)</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--text-faint);">12 derniers mois</span>
       </div>
     </div>`;
   }
 };
-
-// ============================================
-// MODALE DÉTAIL MEMBRE
-// ============================================
-const DashboardMemberModal = {
-  open(m) {
-    // Récupérer les bugs du membre depuis window._dashBugs
-    const bugs = (window._dashBugs || Dashboard.bugs).filter(b => b.assignee === m.name);
-    const stateColors = { 'Nouveau':'#40e0b0','En cours':'#50b8ff','Résolu':'#70d060','Fermé':'#7a7464','Rejeté':'#ff5252','En attente':'#ffd040' };
-    const prioColors  = { 'Critique':'#ff5252','Haute':'#ff9040','Moyenne':'#ffd040','Basse':'#50b8ff','Mineure':'#c060ff' };
-
-    // Grouper par état
-    const byState = {};
-    bugs.forEach(b => { byState[b.state] = (byState[b.state]||[]).concat(b); });
-
-    const stateRows = Object.entries(byState).map(([state, list]) => {
-      const col = stateColors[state] || '#888';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-dim);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;"></span>
-          <span style="font-size:13px;color:var(--text-base);">${state}</span>
-        </div>
-        <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:${col};">${list.length}</span>
-      </div>`;
-    }).join('');
-
-    // Missions en retard
-    const overdueList = bugs.filter(b => b.due_date && new Date(b.due_date)<new Date() && b.state!=='Résolu' && b.state!=='Fermé');
-
-    // Répartition priorités
-    const prioRows = ['Critique','Haute','Moyenne','Basse','Mineure'].map(p => {
-      const n = bugs.filter(b=>b.priority===p).length;
-      if (!n) return '';
-      const col = prioColors[p];
-      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <div style="flex:1;background:var(--bg-hover);border-radius:3px;height:6px;overflow:hidden;">
-          <div style="height:100%;border-radius:3px;background:${col};width:${Math.round(n/bugs.length*100)}%;"></div>
-        </div>
-        <span style="font-size:11px;color:var(--text-muted);width:60px;text-align:right;">${p} (${n})</span>
-      </div>`;
-    }).join('');
-
-    const html = `
-      <div style="position:fixed;inset:0;background:rgba(4,5,8,0.75);backdrop-filter:blur(6px);
-        z-index:5000;display:flex;align-items:center;justify-content:center;padding:20px;"
-        id="memberModalOverlay" onclick="if(event.target===this)DashboardMemberModal.close()">
-        <div style="background:var(--bg-overlay);border:1px solid var(--border-strong);border-radius:var(--r-xl);
-          width:100%;max-width:480px;max-height:85vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,0.6);
-          animation:slideUp 0.2s cubic-bezier(0.34,1.2,0.64,1);">
-
-          <!-- Header -->
-          <div style="padding:20px 22px 16px;border-bottom:1px solid var(--border-base);
-            display:flex;align-items:center;gap:14px;position:sticky;top:0;
-            background:var(--bg-overlay);z-index:1;">
-            <span class="avatar" style="background:${m.color};width:44px;height:44px;font-size:16px;flex-shrink:0;">${m.initials}</span>
-            <div style="flex:1;">
-              <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--text-bright);">${m.name}</div>
-              <div style="font-size:12px;color:var(--text-muted);">${m.total} mission${m.total>1?'s':''} assignées · ${m.charge}% de la charge totale</div>
-            </div>
-            <button onclick="DashboardMemberModal.close()"
-              style="background:var(--bg-raised);border:1px solid var(--border-base);border-radius:var(--r-md);
-              color:var(--text-muted);padding:4px 10px;font-size:16px;cursor:pointer;line-height:1;">✕</button>
-          </div>
-
-          <!-- KPIs charge semaine -->
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 22px;">
-            ${[
-              { v: m.overdue,   l: 'En retard',  c: m.overdue ?'#ff5252':'var(--text-faint)' },
-              { v: m.thisWeek,  l: 'Cette sem.',  c: m.thisWeek?'#ffd040':'var(--text-faint)' },
-              { v: m.nextWeek,  l: 'Sem. +1',     c: m.nextWeek?'#50b8ff':'var(--text-faint)' },
-              { v: m.noDue,     l: 'Sans date',   c: 'var(--text-muted)' },
-            ].map(k => `
-              <div style="background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:10px;text-align:center;">
-                <div style="font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;color:${k.c};line-height:1;">${k.v}</div>
-                <div style="font-size:10px;color:var(--text-faint);margin-top:3px;">${k.l}</div>
-              </div>`).join('')}
-          </div>
-
-          <!-- Barre de charge hebdomadaire -->
-          <div style="padding:0 22px 16px;">
-            <div style="background:var(--bg-raised);border:1px solid var(--border-dim);border-radius:var(--r-md);padding:12px 14px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:8px;align-items:center;">
-                <span style="font-size:12px;color:var(--text-muted);">Pression hebdomadaire</span>
-                <span style="font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;
-                  color:${m.chargeWeekPct>=80?'#ff5252':m.chargeWeekPct>=50?'#ffd040':'#70d060'};">
-                  ${m.chargeWeekPct}%</span>
-              </div>
-              <div style="background:var(--bg-hover);border-radius:4px;height:10px;overflow:hidden;">
-                <div style="height:100%;border-radius:4px;
-                  background:${m.chargeWeekPct>=80?'linear-gradient(90deg,#ff9040,#ff5252)':m.chargeWeekPct>=50?'linear-gradient(90deg,#ffd040,#ff9040)':'linear-gradient(90deg,#40e0b0,#70d060)'};
-                  width:${m.chargeWeekPct}%;transition:width 0.6s ease;"></div>
-              </div>
-              <div style="font-size:10px;color:var(--text-faint);margin-top:6px;">
-                Score : retard×3 + cette semaine×2 + semaine prochaine×1. Normalisé sur le membre le plus chargé.
-              </div>
-            </div>
-          </div>
-
-          <!-- Répartition par état -->
-          <div style="padding:0 22px 16px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Par état</div>
-            ${stateRows}
-          </div>
-
-          <!-- Répartition par priorité -->
-          <div style="padding:0 22px 16px;">
-            <div style="font-size:11px;font-weight:700;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Par priorité</div>
-            ${prioRows}
-          </div>
-
-          ${overdueList.length ? `
-          <!-- Missions en retard -->
-          <div style="padding:0 22px 20px;">
-            <div style="font-size:11px;font-weight:700;color:#ff5252;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">⚠ En retard (${overdueList.length})</div>
-            ${overdueList.slice(0,5).map(b=>`
-              <div style="font-size:12px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border-dim);
-                display:flex;justify-content:space-between;align-items:center;">
-                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${b.title||b.id}</span>
-                <span style="font-size:10px;color:#ff5252;flex-shrink:0;margin-left:8px;">${b.due_date}</span>
-              </div>`).join('')}
-          </div>` : ''}
-
-        </div>
-      </div>`;
-
-    // Injecter
-    let el = document.getElementById('memberModalContainer');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'memberModalContainer';
-      document.body.appendChild(el);
-    }
-    el.innerHTML = html;
-  },
-
-  close() {
-    const el = document.getElementById('memberModalContainer');
-    if (el) el.innerHTML = '';
-  }
-};
+;
