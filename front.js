@@ -19,9 +19,16 @@ const Front = {
     this.loadTheme();
     this.showLoading(true);
     try {
-      const [bugs, cfg, members] = await Promise.all([DB.fetchBugs(), DB.fetchConfig(), DB.fetchMembers()]);
-      this.bugs    = bugs;
-      this.members = members;
+      const [paged, cfg, members, clients] = await Promise.all([
+        DB.fetchBugsPaged({page:1, perPage:this.perPage}),
+        DB.fetchConfig(),
+        DB.fetchMembers(),
+        DB.fetchClients()
+      ]);
+      this.bugs      = paged.data;
+      this.totalBugs = paged.total;
+      this.members   = members;
+      this.clients   = clients;
       if (cfg.types)      this.config.types      = cfg.types;
       if (cfg.categories) this.config.categories = cfg.categories;
     } catch(e) { this.showError('Impossible de charger les données.'); }

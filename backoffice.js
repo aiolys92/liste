@@ -45,10 +45,18 @@ const BO = {
     document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
     this.showLoading(true);
     try {
-      const [bugs, cfg, members, requests] = await Promise.all([DB.fetchBugs(), DB.fetchConfig(), DB.fetchMembers(), DB.fetchRequests()]);
-      this.requests = requests;
-      this.bugs    = bugs;
-      this.members = members;
+      const [paged, cfg, members, requests, clients] = await Promise.all([
+        DB.fetchBugsPaged({page:1, perPage:this.perPage}),
+        DB.fetchConfig(),
+        DB.fetchMembers(),
+        DB.fetchRequests(),
+        DB.fetchClients()
+      ]);
+      this.bugs      = paged.data;
+      this.totalBugs = paged.total;
+      this.requests  = requests;
+      this.members   = members;
+      this.clients   = clients;
       if (cfg.types)      this.config.types      = cfg.types;
       if (cfg.categories) this.config.categories = cfg.categories;
     } catch(e) { this.showNotif('Erreur de chargement : ' + e.message, true); }
