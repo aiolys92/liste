@@ -287,7 +287,7 @@
     config: { types: [], categories: [] },
     currentTab: 'pending',
 
-    async init() {=> this.toggleTheme());
+    async init() {
       try {
         const [requests, cfg, clients] = await Promise.all([DB.fetchRequests(), DB.fetchConfig(), DB.fetchClients()]);
         this.all = requests;
