@@ -292,6 +292,7 @@
   <script>
   const Requests = {
     all: [],
+    clients: [],
     config: { types: [], categories: [] },
     currentTab: 'pending',
 
@@ -299,12 +300,13 @@
       this.loadTheme();
       document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
       try {
-        const [requests, cfg] = await Promise.all([DB.fetchRequests(), DB.fetchConfig()]);
+        const [requests, cfg, clients] = await Promise.all([DB.fetchRequests(), DB.fetchConfig(), DB.fetchClients()]);
         this.all = requests;
+        this.clients = clients;
         if (cfg.types)      this.config.types      = cfg.types;
         if (cfg.categories) this.config.categories = cfg.categories;
       } catch(e) { console.error(e); }
-      this.populateSelects();
+      await this.populateSelects();
       this.renderList();
     },
 
@@ -321,7 +323,7 @@
       if (btn) btn.textContent = isLight ? '🌙' : '☀️';
     },
 
-    populateSelects() {
+    async populateSelects() {
       const sel = (id, arr) => {
         const el = document.getElementById(id); if (!el) return;
         el.innerHTML = arr.length
@@ -330,17 +332,14 @@
       };
       sel('rType',     this.config.types);
       sel('rCategory', this.config.categories);
-      // Charger les clients
+      // Remplir le select client depuis this.clients (déjà chargés)
       const rClient = document.getElementById('rClient');
-      if (rClient) {
-        try {
-          const clients = await DB.fetchClients();
-          clients.forEach(c => {
-            const o = document.createElement('option');
-            o.value = c.id; o.textContent = c.name;
-            rClient.appendChild(o);
-          });
-        } catch(e) {}
+      if (rClient && this.clients?.length) {
+        this.clients.forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.id; o.textContent = c.name;
+          rClient.appendChild(o);
+        });
       }
     },
 
