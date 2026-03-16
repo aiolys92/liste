@@ -2481,3 +2481,8 @@ body.light .kanban-card { background: var(--bg-raised); }
 .client-card:hover { border-color: var(--border-base); }
 .client-name    { font-size: 13px; font-weight: 600; color: var(--text-bright); }
 .client-contact { font-size: 11px; color: var(--text-muted); }
+
+/* Masquer le dot sur les badges client */
+.client-badge .client-badge-dot {
+  display: none;
+}
