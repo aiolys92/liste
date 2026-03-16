@@ -1315,72 +1315,84 @@ const BO = {
   renderReqList() {
     const el = document.getElementById('reqAdminList');
     if (!el) return;
-    const filtered = this.requests.filter(r => r.status === this.currentReqTab);
     const d  = this.esc.bind(this);
     const ts = this.toSlug;
 
+    // Stats globales en haut
+    const pending  = this.requests.filter(r => r.status === 'pending').length;
+    const accepted = this.requests.filter(r => r.status === 'accepted').length;
+    const rejected = this.requests.filter(r => r.status === 'rejected').length;
+
+    const statsBar = `<div class="req-stats-bar">
+      <div class="req-stat">
+        <span class="req-stat-num" style="color:#ffd040;">${pending}</span>
+        <span>en attente</span>
+      </div>
+      <div style="width:1px;background:var(--border-dim);"></div>
+      <div class="req-stat">
+        <span class="req-stat-num" style="color:#70d060;">${accepted}</span>
+        <span>acceptées</span>
+      </div>
+      <div style="width:1px;background:var(--border-dim);"></div>
+      <div class="req-stat">
+        <span class="req-stat-num" style="color:var(--text-faint);">${rejected}</span>
+        <span>refusées</span>
+      </div>
+    </div>`;
+
+    const filtered = this.requests.filter(r => r.status === this.currentReqTab);
+
     if (!filtered.length) {
       const msgs = { pending:'Aucune demande en attente.', accepted:'Aucune demande acceptée.', rejected:'Aucune demande refusée.' };
-      el.innerHTML = '<div class="empty-state"><span class="empty-icon">📥</span><p>' + msgs[this.currentReqTab] + '</p></div>';
+      el.innerHTML = statsBar + '<div class="empty-state"><span class="empty-icon">📥</span><p>' + msgs[this.currentReqTab] + '</p></div>';
       return;
     }
 
-    el.innerHTML = '<div class="req-grid">' + filtered.map(r => {
-      const isPending  = r.status === 'pending';
-      const isAccepted = r.status === 'accepted';
+    const items = filtered.map(r => {
+      const isPending = r.status === 'pending';
+      const accentColor = isPending ? '#ffd040' : r.status === 'accepted' ? '#70d060' : '#555';
+      const initials = (r.author_name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
 
-      // Avatar initiales du demandeur
-      const initials = (r.author_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-
-      // Badge statut pour accepté/refusé
-      const statusBadge = isPending ? '' :
-        isAccepted
-          ? '<span class="req-status-badge req-status-accepted">✓ Acceptée</span>'
-          : '<span class="req-status-badge req-status-rejected">✕ Refusée</span>';
-
-      // Actions
       const actions = isPending
-        ? '<div class="req-card-actions">' +
+        ? '<div class="req-item-actions">' +
             '<button class="btn btn-primary" style="font-size:12px;padding:6px 14px;" onclick="BO.openAcceptModal(' + r.id + ')">✅ Accepter</button>' +
-            '<button class="btn btn-danger"  style="font-size:12px;padding:6px 14px;" onclick="BO.rejectRequest(' + r.id + ')">✕ Refuser</button>' +
+            '<button class="btn btn-secondary" style="font-size:12px;padding:6px 14px;color:var(--text-muted);" onclick="BO.rejectRequest(' + r.id + ')">✕ Refuser</button>' +
           '</div>'
-        : statusBadge;
+        : r.status === 'accepted'
+          ? '<span class="req-accepted-label">✓ Acceptée</span>'
+          : '<span class="req-rejected-label">✕ Refusée</span>';
 
-      return '<div class="req-card req-' + r.status + '">' +
+      return '<div class="req-item">' +
 
-        // Header
-        '<div class="req-card-header">' +
-          '<div style="flex:1;min-width:0;">' +
-            '<div class="req-card-title">' + d(r.title) + '</div>' +
-            '<div class="req-card-meta">' +
+        '<div class="req-item-head">' +
+          '<div class="req-item-accent" style="background:' + accentColor + ';"></div>' +
+          '<div class="req-item-body">' +
+            '<div class="req-item-title">' + d(r.title) + '</div>' +
+            '<div class="req-item-tags">' +
               '<span class="badge badge-type-' + ts(r.type)     + '" style="font-size:10px;">' + d(r.type)     + '</span>' +
               '<span class="badge badge-cat-'  + ts(r.category) + '" style="font-size:10px;">' + d(r.category) + '</span>' +
               (r.client_id ? this._clientBadge(r.client_id) : '') +
             '</div>' +
           '</div>' +
-          (isPending ? '' : '<div style="flex-shrink:0;">' + statusBadge + '</div>') +
+          actions +
         '</div>' +
 
-        // Description
-        '<div class="req-card-desc">' + d(r.description) + '</div>' +
+        '<div class="req-item-desc">' + d(r.description) + '</div>' +
 
-        // Footer
-        '<div class="req-card-footer">' +
-          '<div class="req-card-author">' +
-            '<div class="req-card-author-avatar">' + initials + '</div>' +
-            '<div>' +
-              '<div style="font-weight:600;color:var(--text-base);">' + d(r.author_name) + '</div>' +
-              '<div>' + d(r.author_email) + '</div>' +
-            '</div>' +
-            '<span style="font-family:monospace;font-size:10px;color:var(--text-faint);margin-left:6px;">' +
-              this.fmtDatetime(r.created_at) +
-            '</span>' +
+        '<div class="req-item-footer">' +
+          '<div class="req-item-author">' +
+            '<div class="req-item-initials">' + initials + '</div>' +
+            '<strong style="color:var(--text-base);">' + d(r.author_name) + '</strong>' +
+            '<span>·</span>' +
+            '<span>' + d(r.author_email) + '</span>' +
           '</div>' +
-          (isPending ? actions : '') +
+          '<span style="font-size:10px;color:var(--text-faint);font-family:monospace;">' + this.fmtDatetime(r.created_at) + '</span>' +
         '</div>' +
 
       '</div>';
-    }).join('') + '</div>';
+    }).join('');
+
+    el.innerHTML = statsBar + '<div class="req-list">' + items + '</div>';
   },
 
   openAcceptModal(reqId) {
