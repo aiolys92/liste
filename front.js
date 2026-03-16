@@ -611,9 +611,13 @@ const Front = {
 
 
   /* ---- DÉTAIL MISSION ---- */
-  openDetail(id) {
+  async openDetail(id) {
     const bug = this.bugs.find(b => b.id === id);
     if (!bug) return;
+    // Charger les clients si pas encore disponibles
+    if (!this.clients.length) {
+      try { this.clients = await DB.fetchClients(); } catch(e) {}
+    }
     const d  = this.esc.bind(this);
     const ts = this.toSlug;
     const member = this.members.find(m => m.name === bug.assignee);
