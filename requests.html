@@ -376,6 +376,7 @@
           <div class="request-item-meta">
             <span class="badge badge-type-${this.toSlug(r.type)}" style="font-size:10px;">${this.esc(r.type)}</span>
             <span class="badge badge-cat-${this.toSlug(r.category)}" style="font-size:10px;">${this.esc(r.category)}</span>
+            ${this._clientBadge(r.client_id)}
             <span class="request-item-author">👤 ${this.esc(r.author_name)}</span>
             <span class="request-item-date">${this.fmtDate(r.created_at)}</span>
           </div>
