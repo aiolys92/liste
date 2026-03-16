@@ -198,6 +198,7 @@ const BO = {
     document.getElementById('historyModal')?.addEventListener('click',e=>{if(e.target===document.getElementById('historyModal'))this.closeHistory();});
     document.getElementById('actionModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('actionModalOverlay'))this.closeActionModal();});
     document.getElementById('stateModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('stateModalOverlay'))this.closeStateModal();});
+    document.getElementById('qeOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('qeOverlay'))this.closeQuickEdit();});
     document.getElementById('acceptModalOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('acceptModalOverlay'))this.closeAcceptModal();});
     document.getElementById('detailOverlay')?.addEventListener('click',e=>{if(e.target===document.getElementById('detailOverlay'))this.closeDetail();});
   },
@@ -325,18 +326,21 @@ const BO = {
     const dueDateHtml = renderDueDate(b.due_date, b.state);
     const blocksHtml  = b.blocks?.length ? `<span class="block-tag" style="font-size:10px;padding:1px 5px;">🔗 ${b.blocks.length}</span>` : '';
     const isChecked   = this.selected.has(b.id);
+    const qe = (field, content, extra='') =>
+      `<td onclick="event.stopPropagation();BO.openQuickEdit('${esc(b.id)}','${field}')" class="qe-cell" title="Modifier" ${extra}>${content}</td>`;
+
     return `<tr class="${isChecked?'selected-row':''} clickable-row" onclick="BO.openDetail('${esc(b.id)}')">
       <td><input type="checkbox" class="row-checkbox" data-id="${esc(b.id)}" ${isChecked?'checked':''} onchange="BO.toggleSelect('${esc(b.id)}',this.checked)" onclick="event.stopPropagation()"></td>
-      <td><span class="badge badge-type-${ts(b.type)}">${esc(b.type)}</span></td>
-      <td><span class="badge badge-cat-${ts(b.category)}">${esc(b.category)}</span></td>
+      ${qe('type',     `<span class="badge badge-type-${ts(b.type)}">${esc(b.type)}</span>`)}
+      ${qe('category', `<span class="badge badge-cat-${ts(b.category)}">${esc(b.category)}</span>`)}
       <td><span class="bug-id" onclick="event.stopPropagation();copyId('${esc(b.id)}',this)" title="Cliquer pour copier">${esc(b.id)}</span>${blocksHtml}</td>
-      <td>${clientBadge(b.client_id, this._ctx?.clients||this.clients||[])}</td>
-      <td><div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div></td>
-      <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${esc(b.priority)}</span></td>
-      <td>${this.renderStateDropdown(b)}</td>
-      <td style="text-align:center;">${avatarHtml}</td>
-      <td><div class="date-main">${b.start_date ? fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
-      <td>${dueDateHtml}</td>
+      ${qe('client',   clientBadge(b.client_id, this.clients) || '<span style="color:var(--text-faint);font-size:11px;">—</span>')}
+      ${qe('title',    `<div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div>`)}
+      ${qe('priority', `<span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${esc(b.priority)}</span>`)}
+      <td onclick="event.stopPropagation()">${this.renderStateDropdown(b)}</td>
+      ${qe('assignee', avatarHtml, 'style="text-align:center;"')}
+      ${qe('start_date', b.start_date ? `<div class="date-main">${fmtDate(b.start_date)}</div>` : '<span style="color:var(--text-faint)">—</span>')}
+      ${qe('due_date', dueDateHtml)}
       <td><button class="action-menu-btn" onclick="event.stopPropagation();BO.openActionModal('${esc(b.id)}')" title="Actions">···</button></td>
     </tr>`;
   },
@@ -891,6 +895,108 @@ const BO = {
       this.showNotif('✓ Demande refusée');
     } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
   },
+
+  // ============================================================
+  // QUICK EDIT — modale inline au clic sur une cellule
+  // ============================================================
+  openQuickEdit(id, field) {
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+
+    // Construire le contenu selon le champ
+    let html = '';
+    const label = {
+      type: 'Type', category: 'Catégorie', priority: 'Priorité',
+      assignee: 'Assigné', client: 'Client',
+      title: 'Titre', start_date: 'Date de début', due_date: 'Échéance'
+    }[field] || field;
+
+    if (field === 'type') {
+      html = `<select class="form-select" id="qeValue">
+        ${this.config.types.map(v => `<option value="${esc(v)}" ${bug.type===v?'selected':''}>${esc(v)}</option>`).join('')}
+      </select>`;
+    } else if (field === 'category') {
+      html = `<select class="form-select" id="qeValue">
+        ${this.config.categories.map(v => `<option value="${esc(v)}" ${bug.category===v?'selected':''}>${esc(v)}</option>`).join('')}
+      </select>`;
+    } else if (field === 'priority') {
+      html = `<select class="form-select" id="qeValue">
+        ${this.config.priorities.map(v => `<option value="${esc(v)}" ${bug.priority===v?'selected':''}>${esc(v)}</option>`).join('')}
+      </select>`;
+    } else if (field === 'assignee') {
+      html = `<select class="form-select" id="qeValue">
+        <option value="">— Non assigné —</option>
+        ${this.members.map(m => `<option value="${esc(m.name)}" ${bug.assignee===m.name?'selected':''}>${esc(m.name)}</option>`).join('')}
+      </select>`;
+    } else if (field === 'client') {
+      html = `<select class="form-select" id="qeValue">
+        <option value="">— Aucun client —</option>
+        ${this.clients.map(c => `<option value="${c.id}" ${bug.client_id==c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
+      </select>`;
+    } else if (field === 'title') {
+      html = `<input type="text" class="form-input" id="qeValue" value="${esc(bug.title)}" maxlength="120">`;
+    } else if (field === 'start_date' || field === 'due_date') {
+      const val = bug[field] || '';
+      html = `<input type="date" class="form-input" id="qeValue" value="${val}">`;
+    }
+
+    // Afficher la modale
+    const overlay = document.getElementById('qeOverlay');
+    document.getElementById('qeTitle').textContent = label;
+    document.getElementById('qeBody').innerHTML = html;
+    document.getElementById('qeBugId').value  = id;
+    document.getElementById('qeField').value  = field;
+    overlay.classList.remove('hidden');
+
+    // Focus auto
+    setTimeout(() => document.getElementById('qeValue')?.focus(), 50);
+  },
+
+  closeQuickEdit() {
+    document.getElementById('qeOverlay').classList.add('hidden');
+  },
+
+  async confirmQuickEdit() {
+    const id    = document.getElementById('qeBugId').value;
+    const field = document.getElementById('qeField').value;
+    const el    = document.getElementById('qeValue');
+    if (!el) return;
+
+    let value = el.value;
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+
+    // Construire le delta
+    const data = {};
+    if (field === 'client')     { data.client_id    = value ? parseInt(value) : null; }
+    else if (field === 'start_date' || field === 'due_date') {
+      // Validation dates
+      if (field === 'start_date' && bug.due_date && value > bug.due_date) {
+        this.showNotif('La date de début doit être avant l\'échéance.', true); return;
+      }
+      if (field === 'due_date' && bug.start_date && value && value < bug.start_date) {
+        this.showNotif('L\'échéance doit être après la date de début.', true); return;
+      }
+      data[field] = value || null;
+    }
+    else { data[field] = value || null; }
+
+    const btn = document.querySelector('#qeOverlay .btn-primary');
+    btn.textContent = 'Sauvegarde…'; btn.disabled = true;
+
+    try {
+      const oldVal = bug[field === 'client' ? 'client_id' : field];
+      await DB.updateBug(id, data);
+      await DB.insertHistory(id, 'Admin', field, String(oldVal||''), String(value||''));
+      Object.assign(bug, data);
+      this.closeQuickEdit();
+      this._tlBugsLoaded = false; // invalider cache timeline
+      this.renderTable();
+      this.showNotif('✓ ' + id + ' mis à jour');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+    finally { btn.textContent = 'Enregistrer'; btn.disabled = false; }
+  },
+
 
   // ============================================================
   // CONFIG TAB

@@ -177,6 +177,26 @@
       <div id="reqAdminList"></div>
     </div>
 
+  <!-- QUICK EDIT MODAL -->
+  <input type="hidden" id="qeBugId">
+  <input type="hidden" id="qeField">
+  <div class="modal-overlay hidden" id="qeOverlay">
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-header">
+        <span class="modal-title" id="qeTitle">Modifier</span>
+        <button class="modal-close" onclick="BO.closeQuickEdit()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <div id="qeBody"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="BO.closeQuickEdit()">Annuler</button>
+        <button class="btn btn-primary" onclick="BO.confirmQuickEdit()">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+
   <!-- MODAL MISSION -->
   <div class="modal-overlay hidden" id="modalOverlay">
     <div class="modal" style="max-width:660px;">

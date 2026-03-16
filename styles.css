@@ -2576,3 +2576,27 @@ input[type="date"].form-input { color-scheme: dark; }
   font-weight: 700;
   line-height: 1;
 }
+
+/* ============================================
+   QUICK EDIT — cellules cliquables
+   ============================================ */
+.qe-cell {
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s;
+}
+.qe-cell::after {
+  content: '✎';
+  position: absolute;
+  top: 3px; right: 3px;
+  font-size: 9px;
+  color: var(--text-faint);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.qe-cell:hover {
+  background: var(--bg-hover);
+}
+.qe-cell:hover::after {
+  opacity: 1;
+}
