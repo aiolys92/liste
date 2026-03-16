@@ -37,12 +37,10 @@ const BO = {
   // INIT
   // ============================================================
   async init() {
-    this.loadTheme();
     this.bindTabEvents();
     this.bindTableEvents();
     this.bindModalEvents();
     this.bindBulkEvents();
-    document.getElementById('themeToggle')?.addEventListener('click', () => this.toggleTheme());
     this.showLoading(true);
     try {
       const [paged, cfg, members, requests, clients] = await Promise.all([

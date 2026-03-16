@@ -16,7 +16,6 @@ const Front = {
   filters: { type:'', priority:'', state:'', search:'', client_id:'' },
 
   async init() {
-    this.loadTheme();
     this.showLoading(true);
     try {
       // 1. Charger bugs en priorité — afficher le tableau le plus vite possible
