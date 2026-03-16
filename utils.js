@@ -66,66 +66,83 @@ function initHamburger() {
 document.addEventListener('DOMContentLoaded', initHamburger);
 
 // ============================================
-// MARQUEE — défilement auto si texte tronqué
+// MARQUEE — défilement du texte si tronqué
+// Seul le contenu intérieur bouge, pas le bloc
 // ============================================
 function initMarquee(root) {
   const el = root || document;
-  // Cibler tous les éléments susceptibles de déborder
-  el.querySelectorAll('.badge, .kanban-card-title, .tl-label-text, .tl-bar-label, .bug-desc-title').forEach(applyMarquee);
+  el.querySelectorAll('.badge, .kanban-card-title, .tl-label-text, .tl-bar-label, .bug-desc-title')
+    .forEach(applyMarquee);
 }
 
 function applyMarquee(el) {
-  // Déjà traité
   if (el.dataset.marqueeInit) return;
   el.dataset.marqueeInit = '1';
 
+  // S'assurer que le conteneur clip son contenu
+  el.style.overflow   = 'hidden';
+  el.style.position   = 'relative';
+  el.style.whiteSpace = 'nowrap';
+
   el.addEventListener('mouseenter', () => {
     const overflow = el.scrollWidth - el.clientWidth;
-    if (overflow <= 2) return; // Pas de débordement
+    if (overflow <= 2) return; // Pas de débordement, rien à faire
 
-    // Distance à parcourir (négative = vers la gauche)
-    const dist = -(overflow + 8);
-    el.style.setProperty('--marquee-dist', dist + 'px');
-    el.style.transition = 'none';
-    el.style.willChange = 'transform';
+    // Créer un span interne si pas déjà fait
+    let inner = el.querySelector('.mq-inner');
+    if (!inner) {
+      // Wrapper le contenu existant dans un span
+      inner = document.createElement('span');
+      inner.className = 'mq-inner';
+      inner.style.cssText = 'display:inline-block;white-space:nowrap;will-change:transform;';
+      // Déplacer tous les enfants dans le span
+      while (el.firstChild) inner.appendChild(el.firstChild);
+      el.appendChild(inner);
+    }
 
-    // Petite pause puis défilement
+    const dist = -(overflow + 12);
+    const dur  = Math.min(4000, Math.max(1500, overflow * 18));
+    const pause = 500;
     let start = null;
-    const dur  = Math.min(4000, Math.max(1500, overflow * 18)); // vitesse proportionnelle
-    const pause = 400;
+    let raf;
 
     function tick(ts) {
       if (!start) start = ts;
       const elapsed = ts - start - pause;
-      if (elapsed < 0) { requestAnimationFrame(tick); return; }
+      if (elapsed < 0) { raf = requestAnimationFrame(tick); return; }
 
       const progress = Math.min(elapsed / dur, 1);
-      // Ease in-out
       const ease = progress < 0.5
         ? 2 * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-      el.style.transform = `translateX(${dist * ease}px)`;
+      inner.style.transform = `translateX(${dist * ease}px)`;
 
       if (progress < 1 && el.matches(':hover')) {
-        requestAnimationFrame(tick);
+        raf = requestAnimationFrame(tick);
       } else if (!el.matches(':hover')) {
-        resetMarquee(el);
+        resetInner(inner);
       }
     }
-    requestAnimationFrame(tick);
+
+    raf = requestAnimationFrame(tick);
+    el._marqueeRaf = raf;
   });
 
-  el.addEventListener('mouseleave', () => resetMarquee(el));
+  el.addEventListener('mouseleave', () => {
+    cancelAnimationFrame(el._marqueeRaf);
+    const inner = el.querySelector('.mq-inner');
+    if (inner) resetInner(inner);
+  });
 }
 
-function resetMarquee(el) {
-  el.style.transition = 'transform 0.3s ease';
-  el.style.transform  = 'translateX(0)';
-  setTimeout(() => { el.style.transition = ''; el.style.willChange = ''; }, 300);
+function resetInner(inner) {
+  inner.style.transition = 'transform 0.25s ease';
+  inner.style.transform  = 'translateX(0)';
+  setTimeout(() => { inner.style.transition = ''; }, 280);
 }
 
-// Observer les nouveaux éléments ajoutés dynamiquement (re-render)
+// Observer les nouveaux éléments ajoutés dynamiquement
 const _marqueeObserver = new MutationObserver(mutations => {
   mutations.forEach(m => {
     m.addedNodes.forEach(node => {
