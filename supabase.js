@@ -30,6 +30,7 @@ const DB = {
     if (filters.category) q += `category=eq.${encodeURIComponent(filters.category)}&`;
     if (filters.priority) q += `priority=eq.${encodeURIComponent(filters.priority)}&`;
     if (filters.state)    q += `state=eq.${encodeURIComponent(filters.state)}&`;
+    if (filters.client_id) q += `client_id=eq.${encodeURIComponent(filters.client_id)}&`;
     if (filters.search)   q += `or=(title.ilike.*${encodeURIComponent(filters.search)}*,description.ilike.*${encodeURIComponent(filters.search)}*,id.ilike.*${encodeURIComponent(filters.search)}*)&`;
 
     const sortDir = dir === 'asc' ? 'asc' : 'desc';
@@ -49,7 +50,7 @@ const DB = {
     const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.stats);
     if (cached) return cached;
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at,assignee`,
+      `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at,assignee,client_id`,
       { headers: SUPABASE_HEADERS }
     );
     if (!res.ok) throw new Error(`Stats error ${res.status}`);
@@ -196,6 +197,45 @@ const DB = {
     return true;
   },
 
+
+
+  /* ---- CLIENTS ---- */
+  async fetchClients() {
+    const cached = typeof Cache !== 'undefined' && Cache.get('clients');
+    if (cached) return cached;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?order=name.asc`, { headers: SUPABASE_HEADERS });
+    if (!res.ok) throw new Error(`Clients fetch error ${res.status}`);
+    const data = await res.json();
+    if (typeof Cache !== 'undefined') Cache.set('clients', data);
+    return data;
+  },
+
+  async insertClient(data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
+      method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client insert error ${res.status}`); }
+    if (typeof Cache !== 'undefined') Cache.invalidate('clients');
+    return res.json();
+  },
+
+  async updateClient(id, data) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${id}`, {
+      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client update error ${res.status}`); }
+    if (typeof Cache !== 'undefined') Cache.invalidate('clients');
+    return res.json();
+  },
+
+  async deleteClient(id) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${id}`, {
+      method: 'DELETE', headers: SUPABASE_HEADERS
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client delete error ${res.status}`); }
+    if (typeof Cache !== 'undefined') Cache.invalidate('clients');
+    return true;
+  },
 
   /* ---- REQUESTS ---- */
   async fetchRequests(status = null) {

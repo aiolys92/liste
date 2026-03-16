@@ -97,6 +97,36 @@ const Dashboard = {
       </div>
     `;
 
+    // Stats clients
+    if (typeof DB !== 'undefined') {
+      DB.fetchClients().then(clients => {
+        if (!clients.length) return;
+        const clientStats = clients.map(c => {
+          const assigned = this.bugs.filter(x => x.client_id == c.id);
+          const done     = assigned.filter(x => x.state==='Résolu'||x.state==='Fermé').length;
+          const rate     = assigned.length ? Math.round(done/assigned.length*100) : 0;
+          return { ...c, total: assigned.length, done, rate };
+        }).filter(c => c.total > 0).sort((a,b)=>b.total-a.total);
+
+        if (!clientStats.length) return;
+        const clientsHtml = `<div class="db-card" style="margin-top:14px;">
+          <div class="db-card-label">Charge par client</div>
+          <div class="db-members-grid">
+            ${clientStats.map(c => `
+              <div class="db-member-card">
+                <span class="client-badge-dot" style="background:${c.color};width:12px;height:12px;border-radius:50%;flex-shrink:0;"></span>
+                <div class="db-member-info">
+                  <div class="db-member-name">${c.name}</div>
+                  <div class="db-member-stats">${c.total} mission${c.total>1?'s':''} · ${c.done} résolues</div>
+                </div>
+                <div class="db-member-rate" style="color:${c.color}" title="Taux de résolution">${c.rate}%</div>
+              </div>`).join('')}
+          </div>
+        </div>`;
+        document.getElementById('dashContent').insertAdjacentHTML('beforeend', clientsHtml);
+      }).catch(()=>{});
+    }
+
     // Stats membres
     if (typeof DB !== 'undefined') {
       DB.fetchMembers().then(members => {

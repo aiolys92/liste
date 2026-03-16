@@ -105,6 +105,11 @@
         <div class="filter-group"><span class="filter-label">Priorité</span><select class="filter-select" id="filterPriority"><option value="">Toutes</option></select></div>
         <div class="filter-divider"></div>
         <div class="filter-group"><span class="filter-label">État</span><select class="filter-select" id="filterState"><option value="">Tous</option></select></div>
+        <div class="filter-divider"></div>
+        <div class="filter-group">
+          <span class="filter-label">Client</span>
+          <select class="filter-select" id="filterClient"><option value="">Tous</option></select>
+        </div>
         <div class="search-wrapper"><span class="search-icon">⌕</span><input type="text" class="search-input" id="searchInput" placeholder="Rechercher…"></div>
         <span class="filter-count" id="filterCount"></span>
       </div>
@@ -117,6 +122,7 @@
             <col style="width:112px">   <!-- Catégorie -->
             <col style="width:94px">    <!-- ID -->
             <col>                       <!-- Description (espace restant) -->
+            <col style="width:110px">   <!-- Client -->
             <col style="width:106px">   <!-- Priorité -->
             <col style="width:130px">   <!-- État -->
             <col style="width:44px">    <!-- Assigné -->
@@ -131,6 +137,7 @@
               <th data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
               <th data-sort="id">ID <span class="sort-arrow">↕</span></th>
               <th>Description</th>
+              <th>Client</th>
               <th data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
               <th data-sort="state">État <span class="sort-arrow">↕</span></th>
               <th style="text-align:center;">👤</th>
@@ -154,6 +161,7 @@
     <div id="panelConfig" style="display:none;">
       <div class="config-hint">💡 Modifiez les valeurs, ajoutez ou supprimez des entrées, puis cliquez Sauvegarder.</div>
       <div class="config-grid">
+        <div id="config-clients"></div>
         <div id="config-types"></div>
         <div id="config-categories"></div>
         <div id="config-members"></div>
@@ -207,6 +215,10 @@
           <div class="form-group">
             <label class="form-label">Date d'arrivée *</label>
             <input type="date" class="form-input" id="fDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Client</label>
+            <select class="form-select" id="fClient"></select>
           </div>
           <div class="form-group">
             <label class="form-label">Lien de référence</label>

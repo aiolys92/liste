@@ -61,6 +61,11 @@
       <div class="filter-group"><span class="filter-label">Priorité</span><select class="filter-select" id="filterPriority"><option value="">Toutes</option></select></div>
       <div class="filter-divider"></div>
       <div class="filter-group"><span class="filter-label">État</span><select class="filter-select" id="filterState"><option value="">Tous</option></select></div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <span class="filter-label">Client</span>
+        <select class="filter-select" id="filterClient"><option value="">Tous</option></select>
+      </div>
       <div class="search-wrapper"><span class="search-icon">⌕</span><input type="text" class="search-input" id="searchInput" placeholder="Rechercher…"></div>
       <span class="filter-count" id="filterCount"></span>
     </div>
@@ -74,6 +79,7 @@
             <col style="width:115px">   <!-- Catégorie -->
             <col style="width:96px">    <!-- ID -->
             <col>                       <!-- Description (espace restant) -->
+            <col style="width:110px">   <!-- Client -->
             <col style="width:108px">   <!-- Priorité -->
             <col style="width:124px">   <!-- État -->
             <col style="width:44px">    <!-- Assigné -->
@@ -87,6 +93,7 @@
               <th data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
               <th data-sort="id">ID <span class="sort-arrow">↕</span></th>
               <th>Description</th>
+              <th class="col-client">Client</th>
               <th data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
               <th data-sort="state">État <span class="sort-arrow">↕</span></th>
               <th style="text-align:center;">👤</th>

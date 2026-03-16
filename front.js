@@ -6,13 +6,14 @@ const Front = {
   bugs: [],
   members: [],
   config: { types:[], categories:[], priorities:['Critique','Haute','Moyenne','Basse','Mineure'], states:['Nouveau','En cours','Résolu','Fermé','Rejeté','En attente'] },
+  clients: [],
   view: 'list',
   currentPage: 1,
   perPage: 20,
   totalBugs: 0,
   sortField: 'date',
   sortDir: 'desc',
-  filters: { type:'', priority:'', state:'', search:'' },
+  filters: { type:'', priority:'', state:'', search:'', client_id:'' },
 
   async init() {
     this.loadTheme();
@@ -83,12 +84,18 @@ const Front = {
     sel('filterType',this.config.types);
     sel('filterPriority',this.config.priorities);
     sel('filterState',this.config.states);
+    const fcl=document.getElementById('filterClient');
+    if(fcl){
+      const cur=fcl.value; fcl.innerHTML='<option value="">Tous</option>';
+      this.clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;fcl.appendChild(o);});
+      if([...fcl.options].some(o=>o.value===cur))fcl.value=cur;
+    }
   },
 
   bindEvents() {
-    ['filterType','filterPriority','filterState'].forEach(id=>{
+    ['filterType','filterPriority','filterState','filterClient'].forEach(id=>{
       document.getElementById(id)?.addEventListener('change',e=>{
-        const map={filterType:'type',filterPriority:'priority',filterState:'state'};
+        const map={filterType:'type',filterPriority:'priority',filterState:'state',filterClient:'client_id'};
         this.filters[map[id]]=e.target.value;this.currentPage=1;this.render();
       });
     });
@@ -232,6 +239,7 @@ const Front = {
       <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
       <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
       <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
+      <td class="col-client">${this._clientBadge(b.client_id)}</td>
       <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
@@ -299,6 +307,7 @@ const Front = {
     const dueHtml = this.renderDueDate(b.due_date, b.state);
     const blocksHtml = b.blocks?.length
       ? `<span class="kanban-card-blocks">🔗 ${b.blocks.length}</span>` : '';
+    const clientHtml  = this._clientBadge(b.client_id);
     const versionHtml = b.target_version
       ? `<span class="kanban-card-version">v${d(b.target_version)}</span>` : '';
     const refHtml = b.ref_url

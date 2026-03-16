@@ -11,6 +11,7 @@ if (sessionStorage.getItem('bo_auth') !== 'ok') {
 const BO = {
   bugs: [],
   members: [],
+  clients: [],
   requests: [],
   currentReqTab: 'pending',
   serverPage: 1,
@@ -26,7 +27,7 @@ const BO = {
   itemsPerPage: 10,
   sortField: 'date',
   sortDir: 'desc',
-  filters: { type:'', category:'', priority:'', state:'', search:'' },
+  filters: { type:'', category:'', priority:'', state:'', search:'', client_id:'' },
   deleteTarget: null,
   activeTab: 'bugs',
   selected: new Set(),
@@ -135,6 +136,13 @@ const BO = {
     rebuild('filterCategory', this.config.categories, 'Toutes');
     rebuild('filterPriority', this.config.priorities, 'Toutes');
     rebuild('filterState',    this.config.states,     'Tous');
+    const fcl = document.getElementById('filterClient');
+    if (fcl) {
+      const curCl = fcl.value;
+      fcl.innerHTML = '<option value="">Tous</option>';
+      this.clients.forEach(c => { const o=document.createElement('option'); o.value=c.id; o.textContent=c.name; fcl.appendChild(o); });
+      if ([...fcl.options].some(o=>o.value===curCl)) fcl.value=curCl;
+    }
   },
 
   populateFormSelects() {
@@ -161,9 +169,9 @@ const BO = {
   },
 
   bindTableEvents() {
-    ['filterType','filterCategory','filterPriority','filterState'].forEach(id=>{
+    ['filterType','filterCategory','filterPriority','filterState','filterClient'].forEach(id=>{
       document.getElementById(id)?.addEventListener('change',e=>{
-        const map={filterType:'type',filterCategory:'category',filterPriority:'priority',filterState:'state'};
+        const map={filterType:'type',filterCategory:'category',filterPriority:'priority',filterState:'state',filterClient:'client_id'};
         this.filters[map[id]]=e.target.value; this.currentPage=1; this.render();
       });
     });
@@ -284,6 +292,7 @@ const BO = {
       <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
       <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
       <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
+      <td class="col-client">${this._clientBadge(b.client_id)}</td>
       <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
       <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
       <td>${this.renderStateDropdown(b)}</td>
@@ -457,6 +466,7 @@ const BO = {
     document.getElementById('fDueDate').value  =bug.due_date||'';
     if(document.getElementById('fRefUrl')) document.getElementById('fRefUrl').value=bug.ref_url||'';
     if(document.getElementById('fTargetVersion')) document.getElementById('fTargetVersion').value=bug.target_version||'';
+    this._populateClientSelect(bug.client_id||null);
     this.updateCounter('fTitle',120); this.updateCounter('fDescription',2000);
     // Blocks
     const fb=document.getElementById('fBlocks');
@@ -525,6 +535,7 @@ const BO = {
       due_date:document.getElementById('fDueDate').value||null,
       ref_url:         document.getElementById('fRefUrl')?.value.trim()||null,
       target_version:  document.getElementById('fTargetVersion')?.value.trim()||null,
+      client_id:       document.getElementById('fClient')?.value ? parseInt(document.getElementById('fClient').value) : null,
       blocks:  blocks.length?blocks:null
     };
     const btn=document.querySelector('.modal-footer .btn-primary');
@@ -916,8 +927,68 @@ const BO = {
   // ============================================================
   renderConfigTab() {
     this.renderConfigSection('types',      'Types de missions', 'Ajouter un type…');
+    this.renderClientsSection();
     this.renderConfigSection('categories', 'Catégories',        'Ajouter une catégorie…');
     this.renderMembersSection();
+  },
+
+  renderClientsSection() {
+    const container = document.getElementById('config-clients');
+    if (!container) return;
+    const COLORS = ['#50b8ff','#40e0b0','#ff9040','#c060ff','#70d060','#ff5252','#ffd040','#c8a030','#e090d0','#90b0e8'];
+    container.innerHTML = `
+      <div class="config-section">
+        <div class="config-section-header">
+          <span class="config-section-title">Clients</span>
+          <span class="config-section-count">${this.clients.length} client${this.clients.length>1?'s':''}</span>
+        </div>
+        <div class="config-items">
+          ${this.clients.map(c => `
+            <div class="client-card">
+              <span class="client-badge-dot" style="background:${c.color};width:10px;height:10px;border-radius:50%;flex-shrink:0;"></span>
+              <div style="flex:1;min-width:0;">
+                <div class="client-name">${this.esc(c.name)}</div>
+                ${c.contact ? `<div class="client-contact">${this.esc(c.contact)}</div>` : ''}
+              </div>
+              <button class="config-item-delete" onclick="BO.deleteClientItem(${c.id})">×</button>
+            </div>`).join('') || '<div style="padding:12px;color:var(--text-faint);font-size:12px;">Aucun client.</div>'}
+        </div>
+        <div class="config-add-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+          <input type="text" class="form-input" id="newClientName" placeholder="Nom du client…" maxlength="60">
+          <input type="text" class="form-input" id="newClientContact" placeholder="Contact (optionnel)…" maxlength="80">
+          <div style="display:flex;gap:8px;">
+            <select class="form-select" id="newClientColor" style="flex:1;">
+              ${COLORS.map(c=>`<option value="${c}" style="background:${c}">${c}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" onclick="BO.addClientItem()">+ Ajouter</button>
+          </div>
+        </div>
+      </div>`;
+  },
+
+  async addClientItem() {
+    const name    = document.getElementById('newClientName').value.trim();
+    const contact = document.getElementById('newClientContact').value.trim();
+    const color   = document.getElementById('newClientColor').value;
+    if (!name) { this.showNotif('Remplissez le nom du client.', true); return; }
+    try {
+      const created = await DB.insertClient({ name, contact: contact||null, color });
+      this.clients.push(Array.isArray(created) ? created[0] : { name, contact, color, id: Date.now() });
+      this.renderClientsSection();
+      this.populateFilters();
+      this.showNotif(`✓ Client ${name} ajouté`);
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
+  },
+
+  async deleteClientItem(id) {
+    if (!confirm('Supprimer ce client ? Les missions liées ne seront pas supprimées.')) return;
+    try {
+      await DB.deleteClient(id);
+      this.clients = this.clients.filter(c => c.id !== id);
+      this.renderClientsSection();
+      this.populateFilters();
+      this.showNotif('✓ Client supprimé');
+    } catch(e) { this.showNotif('Erreur : ' + e.message, true); }
   },
 
   renderConfigSection(key, label, placeholder) {
@@ -1161,6 +1232,29 @@ const BO = {
 
   closeDetail() {
     document.getElementById('detailOverlay').classList.add('hidden');
+  },
+
+  _populateClientSelect(currentId) {
+    const el = document.getElementById('fClient');
+    if (!el) return;
+    el.innerHTML = '<option value="">— Aucun client —</option>';
+    this.clients.forEach(c => {
+      const o = document.createElement('option');
+      o.value = c.id; o.textContent = c.name;
+      if (currentId && c.id == currentId) o.selected = true;
+      el.appendChild(o);
+    });
+  },
+
+  _clientBadge(clientId) {
+    if (!clientId) return '<span style="color:var(--text-faint);font-size:11px;">—</span>';
+    const c = this.clients.find(x => x.id == clientId);
+    if (!c) return '<span style="color:var(--text-faint);font-size:11px;">—</span>';
+    const bg  = c.color + '20';
+    const brd = c.color + '50';
+    return `<span class="client-badge" style="background:${bg};border-color:${brd};color:${c.color};">
+      <span class="client-badge-dot" style="background:${c.color};"></span>${this.esc(c.name)}
+    </span>`;
   },
 
   updateCounter(id, max) {
