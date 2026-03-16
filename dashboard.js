@@ -298,60 +298,97 @@ const Dashboard = {
   _timeline() {
     const b     = this.bugs;
     const today = new Date(); today.setHours(0,0,0,0);
-    const weeks = [];
-    for (let i=7; i>=0; i--) {
-      const from = new Date(today); from.setDate(from.getDate()-i*7);
-      const to   = new Date(from);  to.setDate(to.getDate()+7);
-      weeks.push({
-        label:    from.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}),
-        created:  b.filter(x => x.created_at && new Date(x.created_at)>=from && new Date(x.created_at)<to).length,
-        resolved: b.filter(x => x.created_at && new Date(x.created_at)>=from && new Date(x.created_at)<to && (x.state==='Résolu'||x.state==='Fermé')).length,
+
+    // Générer 30 jours
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d    = new Date(today); d.setDate(d.getDate()-i);
+      const next = new Date(d);     next.setDate(next.getDate()+1);
+      const isToday = i === 0;
+      const isWeekend = d.getDay()===0 || d.getDay()===6;
+      days.push({
+        label:    d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}),
+        created:  b.filter(x => x.created_at && new Date(x.created_at)>=d && new Date(x.created_at)<next).length,
+        resolved: b.filter(x => x.created_at && new Date(x.created_at)>=d && new Date(x.created_at)<next && (x.state==='Résolu'||x.state==='Fermé')).length,
+        isToday,
+        isWeekend
       });
     }
 
-    const maxVal = Math.max(...weeks.map(w=>Math.max(w.created,w.resolved)), 1);
-    const H=90, W=100, GAP=4, BAR=16;
+    const maxVal = Math.max(...days.map(d=>Math.max(d.created,d.resolved)), 1);
+    const H=100, BAR=10, GAP=3, STEP=BAR*2+GAP+2;
+    const totalW = 30*STEP - GAP;
 
-    const cols = weeks.map((w,i) => {
-      const hC = w.created  ? Math.max(3, Math.round((w.created/maxVal)*H))  : 0;
-      const hR = w.resolved ? Math.max(3, Math.round((w.resolved/maxVal)*H)) : 0;
-      const x  = i*(W+GAP);
+    // Sparkline de la tendance (courbe lissée des créations)
+    const sparkPoints = days.map((d,i) => {
+      const x = i*STEP + BAR;
+      const y = H - (d.created ? Math.max(4, Math.round((d.created/maxVal)*H)) : 0);
+      return `${x},${y}`;
+    }).join(' ');
+
+    const cols = days.map((d,i) => {
+      const hC = d.created  ? Math.max(3, Math.round((d.created/maxVal)*H))  : 0;
+      const hR = d.resolved ? Math.max(3, Math.round((d.resolved/maxVal)*H)) : 0;
+      const x  = i*STEP;
+      const showLabel = i===0 || i===7 || i===14 || i===21 || i===29 || d.isToday;
       return `<g>
-        <!-- Créées -->
-        <rect x="${x}" y="${H-hC}" width="${BAR}" height="${hC}" fill="#50b8ff" opacity="0.75" rx="3"
-          style="transition:opacity 0.2s" onmouseover="this.nextElementSibling.style.display='block'"
-          onmouseout="this.nextElementSibling.style.display='none'">
-          <title>${w.label} — Créées: ${w.created}</title></rect>
-        <!-- Résolues -->
-        <rect x="${x+BAR+2}" y="${H-hR}" width="${BAR}" height="${hR}" fill="#70d060" opacity="0.75" rx="3">
-          <title>${w.label} — Résolues: ${w.resolved}</title></rect>
-        <!-- Label -->
-        <text x="${x+BAR}" y="${H+14}" text-anchor="middle"
-          style="font-size:9px;font-family:'DM Mono',monospace;fill:var(--text-faint)">${w.label}</text>
+        ${d.isWeekend ? `<rect x="${x-1}" y="0" width="${STEP}" height="${H}" fill="rgba(255,255,255,0.015)" rx="0"/>` : ''}
+        ${d.isToday   ? `<rect x="${x-1}" y="0" width="${STEP+2}" height="${H}" fill="rgba(200,160,48,0.06)" rx="2"/>` : ''}
+        <rect x="${x}" y="${H-hC}" width="${BAR}" height="${hC}"
+          fill="${d.isToday?'#f0c84a':'#50b8ff'}" opacity="${d.isToday?'0.9':'0.7'}" rx="2">
+          <title>${d.label} — Créées: ${d.created}</title></rect>
+        <rect x="${x+BAR+1}" y="${H-hR}" width="${BAR}" height="${hR}"
+          fill="#70d060" opacity="0.7" rx="2">
+          <title>${d.label} — Résolues: ${d.resolved}</title></rect>
+        ${showLabel ? `<text x="${x+BAR}" y="${H+13}" text-anchor="middle"
+          style="font-size:8px;font-family:'DM Mono',monospace;fill:${d.isToday?'var(--gold-mid)':'var(--text-faint)'}">
+          ${d.isToday?'Auj.':d.label}</text>` : ''}
       </g>`;
     }).join('');
 
-    const totalW = 8*(W+GAP)-GAP;
+    // Totaux sur 30j
+    const total30  = days.reduce((s,d)=>s+d.created, 0);
+    const resolved30 = days.reduce((s,d)=>s+d.resolved, 0);
+    const avgPerDay  = (total30/30).toFixed(1);
 
-    return `<div style="overflow-x:auto;">
-      <svg width="100%" viewBox="0 0 ${totalW} ${H+22}" style="min-width:500px;overflow:visible;">
-        <!-- Lignes de grille -->
-        ${[0.25,0.5,0.75,1].map(f=>`
-          <line x1="0" y1="${H-f*H}" x2="${totalW}" y2="${H-f*H}"
-            stroke="var(--border-dim)" stroke-width="0.5" stroke-dasharray="3 3"/>
-          <text x="-4" y="${H-f*H+4}" text-anchor="end"
-            style="font-size:8px;font-family:'DM Mono',monospace;fill:var(--text-faint)">${Math.round(f*maxVal)}</text>
-        `).join('')}
-        <line x1="0" y1="${H}" x2="${totalW}" y2="${H}" stroke="var(--border-base)" stroke-width="0.5"/>
-        ${cols}
-      </svg>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:10px;font-size:11px;color:var(--text-muted);">
+    return `<div>
+      <div style="display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#50b8ff;">${total30}</span>
+          <span style="margin-left:5px;">créées</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#70d060;">${resolved30}</span>
+          <span style="margin-left:5px;">résolues</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--text-bright);">${avgPerDay}</span>
+          <span style="margin-left:5px;">/ jour en moyenne</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <svg width="100%" viewBox="-20 0 ${totalW+24} ${H+20}" style="min-width:500px;overflow:visible;">
+          ${[0.25,0.5,0.75,1].map(f=>`
+            <line x1="0" y1="${H-f*H}" x2="${totalW}" y2="${H-f*H}"
+              stroke="var(--border-dim)" stroke-width="0.5" stroke-dasharray="2 3"/>
+            <text x="-4" y="${H-f*H+3}" text-anchor="end"
+              style="font-size:8px;font-family:'DM Mono',monospace;fill:var(--text-faint)">${Math.round(f*maxVal)}</text>
+          `).join('')}
+          <line x1="0" y1="${H}" x2="${totalW}" y2="${H}" stroke="var(--border-base)" stroke-width="0.5"/>
+          ${cols}
+        </svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted);flex-wrap:wrap;">
         <span style="display:flex;align-items:center;gap:5px;">
           <span style="width:10px;height:10px;border-radius:2px;background:#50b8ff;display:inline-block;"></span>Créées
         </span>
         <span style="display:flex;align-items:center;gap:5px;">
           <span style="width:10px;height:10px;border-radius:2px;background:#70d060;display:inline-block;"></span>Résolues
         </span>
+        <span style="display:flex;align-items:center;gap:5px;">
+          <span style="width:10px;height:10px;border-radius:2px;background:var(--gold-mid);display:inline-block;"></span>Aujourd'hui
+        </span>
+        <span style="margin-left:auto;font-size:10px;color:var(--text-faint);">30 derniers jours</span>
       </div>
     </div>`;
   }

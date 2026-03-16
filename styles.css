@@ -2346,3 +2346,39 @@ body.light .kanban-card { background: var(--bg-raised); }
 .badge-prio-mineure .badge-dot {
   display: none;
 }
+
+/* ============================================
+   COMPTEUR DE CARACTÈRES
+   ============================================ */
+.char-counter-wrap { position: relative; }
+.char-counter {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+.char-counter.warn   { color: var(--p-medium); }
+.char-counter.danger { color: var(--p-critical); font-weight: 600; }
+
+/* ============================================
+   VERSION CIBLE — badge
+   ============================================ */
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(80,184,255,0.1);
+  border: 1px solid rgba(80,184,255,0.25);
+  border-radius: var(--r-sm);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'DM Mono', monospace;
+  color: var(--blue-bright);
+  white-space: nowrap;
+}
+.version-badge::before { content: 'v'; opacity: 0.6; }

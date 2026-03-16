@@ -456,6 +456,8 @@ const BO = {
     document.getElementById('fDate').value     =bug.date;
     document.getElementById('fDueDate').value  =bug.due_date||'';
     if(document.getElementById('fRefUrl')) document.getElementById('fRefUrl').value=bug.ref_url||'';
+    if(document.getElementById('fTargetVersion')) document.getElementById('fTargetVersion').value=bug.target_version||'';
+    this.updateCounter('fTitle',120); this.updateCounter('fDescription',2000);
     // Blocks
     const fb=document.getElementById('fBlocks');
     [...fb.options].forEach(o=>{ o.selected=(bug.blocks||[]).includes(o.value)&&o.value!==id; });
@@ -521,7 +523,8 @@ const BO = {
       assignee:document.getElementById('fAssignee').value||null,
       title, description, date,
       due_date:document.getElementById('fDueDate').value||null,
-      ref_url: document.getElementById('fRefUrl')?.value.trim()||null,
+      ref_url:         document.getElementById('fRefUrl')?.value.trim()||null,
+      target_version:  document.getElementById('fTargetVersion')?.value.trim()||null,
       blocks:  blocks.length?blocks:null
     };
     const btn=document.querySelector('.modal-footer .btn-primary');
@@ -736,7 +739,13 @@ const BO = {
             </select>
           </div>
         </div>
-        <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;" onclick="BO.scrollTlToday()">⊙ Aujourd'hui</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;" onclick="BO.scrollTlToday()">⊙ Aujourd'hui</button>
+          <button class="btn ${tl.focusMode?'btn-primary':'btn-secondary'}" style="font-size:11px;padding:5px 12px;"
+            onclick="BO.toggleTlFocus()" title="Masquer les missions résolues et fermées">
+            ${tl.focusMode ? '👁 Actives seulement' : '👁 Tout afficher'}
+          </button>
+        </div>
       </div>
       <div id="tlBoard"></div>`;
 
@@ -1137,6 +1146,7 @@ const BO = {
           '</div>' +
           '<div><div class="detail-section-label">Missions bloquées</div><div class="detail-blocks">' + blocksHtml + '</div></div>' +
           (bug.ref_url ? '<div style="margin-top:12px;"><div class="detail-section-label">Lien de référence</div><a href="' + d(bug.ref_url) + '" target="_blank" rel="noopener" style="font-size:13px;color:var(--blue-bright);word-break:break-all;">' + d(bug.ref_url) + '</a></div>' : '') +
+          (bug.target_version ? '<div style="margin-top:12px;"><div class="detail-section-label">Version cible</div><span class="version-badge" style="margin-top:4px;display:inline-flex;">' + d(bug.target_version) + '</span></div>' : '') +
         '</div>' +
         '<div class="detail-footer">' +
           '<button class="btn btn-secondary" onclick="BO.closeDetail()">Fermer</button>' +
@@ -1151,6 +1161,15 @@ const BO = {
 
   closeDetail() {
     document.getElementById('detailOverlay').classList.add('hidden');
+  },
+
+  updateCounter(id, max) {
+    const el  = document.getElementById(id);
+    const cnt = document.getElementById('counter-' + id);
+    if (!el || !cnt) return;
+    const remaining = max - el.value.length;
+    cnt.textContent  = remaining;
+    cnt.className    = 'char-counter' + (remaining < 20 ? ' danger' : remaining < 50 ? ' warn' : '');
   },
 
   logout(){sessionStorage.removeItem('bo_auth');window.location.href='login.html';},

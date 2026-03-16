@@ -116,7 +116,8 @@ const Front = {
 
   timeline: {
     zoom: 'month',
-    group: 'category'
+    group: 'category',
+    focusMode: false
   },
 
   switchView(v) {
@@ -379,15 +380,22 @@ const Front = {
             </select>
           </div>
         </div>
-        <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;" onclick="Front.scrollTlToday()">⊙ Aujourd'hui</button>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-secondary" style="font-size:11px;padding:5px 12px;" onclick="Front.scrollTlToday()">⊙ Aujourd'hui</button>
+          <button class="btn ${tl.focusMode?'btn-primary':'btn-secondary'}" style="font-size:11px;padding:5px 12px;"
+            onclick="Front.toggleTlFocus()" title="Masquer les missions résolues et fermées">
+            ${tl.focusMode ? '👁 Actives seulement' : '👁 Tout afficher'}
+          </button>
+        </div>
       </div>
       <div id="tlBoard"></div>`;
 
     this._drawTimeline();
   },
 
-  setTlZoom(z)  { this.timeline.zoom=z;  this._drawTimeline(); },
-  setTlGroup(g) { this.timeline.group=g; this._drawTimeline(); },
+  setTlZoom(z)      { this.timeline.zoom=z;      this._drawTimeline(); },
+  setTlGroup(g)     { this.timeline.group=g;   this._drawTimeline(); },
+  toggleTlFocus()   { this.timeline.focusMode=!this.timeline.focusMode; this.renderTimeline(); },
   scrollTlToday() {
     const wrap = document.getElementById('tlWrap');
     const today = document.querySelector('.tl-today-line');
@@ -602,6 +610,10 @@ const Front = {
             <a href="${d(bug.ref_url)}" target="_blank" rel="noopener"
               onclick="event.stopPropagation()"
               style="font-size:13px;color:var(--blue-bright);word-break:break-all;">${d(bug.ref_url)}</a>
+          </div>` : ''}
+          ${bug.target_version ? `<div>
+            <div class="detail-section-label">Version cible</div>
+            <span class="version-badge" style="margin-top:4px;display:inline-flex;">${d(bug.target_version)}</span>
           </div>` : ''}
         </div>
         <div class="detail-footer">
