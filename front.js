@@ -245,25 +245,25 @@ const Front = {
   },
 
   renderRow(b) {
-    const ts=this.toSlug,d=this.esc.bind(this);
+    const ts=toSlug,d=esc;
     const member=this.members.find(m=>m.name===b.assignee);
     const avatarHtml=member
       ?`<span class="avatar" style="background:${member.color}" title="${d(member.name)}">${d(member.initials)}</span>`
       :`<span class="avatar avatar-unassigned" title="Non assigné">·</span>`;
-    const dueDateHtml=this.renderDueDate(b.due_date,b.state);
+    const dueDateHtml=renderDueDate(b.due_date,b.state);
     const blocksHtml=b.blocks?.length?`<span class="block-tag" style="font-size:10px;padding:1px 5px;margin-left:4px;">🔗${b.blocks.length}</span>`:'';
-    return `<tr class="clickable-row" onclick="Front.openDetail('${d(b.id)}')">
-      <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
-      <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
-      <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
-      <td>${this._clientBadge(b.client_id)}</td>
-      <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
-      <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
-      <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
+    return `<tr class="clickable-row" onclick="Front.openDetail('${esc(b.id)}')">
+      <td><span class="badge badge-type-${ts(b.type)}">${esc(b.type)}</span></td>
+      <td><span class="badge badge-cat-${ts(b.category)}">${esc(b.category)}</span></td>
+      <td><span class="bug-id" onclick="event.stopPropagation();copyId('${esc(b.id)}',this)" title="Cliquer pour copier">${esc(b.id)}</span>${blocksHtml}</td>
+      <td>${clientBadge(b.client_id, this._ctx?.clients||this.clients||[])}</td>
+      <td><div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div></td>
+      <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${esc(b.priority)}</span></td>
+      <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${esc(b.state)}</span></td>
       <td style="text-align:center;">${avatarHtml}</td>
-      <td><div class="date-main">${b.start_date ? this.fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
+      <td><div class="date-main">${b.start_date ? fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
       <td>${dueDateHtml}</td>
-      <td style="text-align:center;"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
+      <td style="text-align:center;"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${esc(b.id)}')" title="Commentaires">💬</button></td>
     </tr>`;
   },
 
@@ -273,9 +273,9 @@ const Front = {
     const d=new Date(due);
     const diff=Math.ceil((d-today)/(1000*60*60*24));
     const done=state==='Résolu'||state==='Fermé';
-    let cls='ok',label=this.fmtDate(due);
-    if(!done&&diff<0){cls='overdue';label=`⚠ ${this.fmtDate(due)}`;}
-    else if(!done&&diff<=3){cls='due-soon';label=`⏰ ${this.fmtDate(due)}`;}
+    let cls='ok',label=fmtDate(due);
+    if(!done&&diff<0){cls='overdue';label=`⚠ ${fmtDate(due)}`;}
+    else if(!done&&diff<=3){cls='due-soon';label=`⏰ ${fmtDate(due)}`;}
     return `<span class="due-date ${cls}">${label}</span>`;
   },
 
@@ -293,126 +293,13 @@ const Front = {
 
   goPage(p){const t=Math.max(1,Math.ceil(this.totalBugs/this.perPage));if(p<1||p>t)return;this.currentPage=p;this.renderList();window.scrollTo({top:0,behavior:'smooth'});},
 
-  renderKanban() {
-    const filtered=this.getFiltered(),board=document.getElementById('kanbanBoard');
-    const cols={};this.config.categories.forEach(c=>{cols[c]=[];});
-    filtered.forEach(b=>{if(cols[b.category])cols[b.category].push(b);else cols[b.category]=[b];});
-    board.innerHTML=this.config.categories.map(cat=>{
-      const bugs=cols[cat]||[];
-      const po={'Critique':0,'Haute':1,'Moyenne':2,'Basse':3,'Mineure':4};
-      bugs.sort((a,b)=>(po[a.priority]??99)-(po[b.priority]??99));
-      const critCount=bugs.filter(b=>b.priority==='Critique').length;
-      const critBadge=critCount>0?`<span class="kanban-col-alert">${critCount} ⚠</span>`:'';
-      return `<div class="kanban-col">
-        <div class="kanban-col-header">
-          <div class="kanban-col-title-row"><span class="badge badge-cat-${this.toSlug(cat)} kanban-col-badge"><span class="badge-dot"></span>${this.esc(cat)}</span>${critBadge}</div>
-          <span class="kanban-col-count">${bugs.length}</span>
-        </div>
-        <div class="kanban-cards">
-          ${bugs.length===0?`<div class="kanban-empty">Aucune mission</div>`:bugs.map(b=>this.renderKanbanCard(b)).join('')}
-        </div>
-      </div>`;
-    }).join('');
-  },
+  renderKanban() { Kanban.render(); },
+  renderKanbanCard(b) { return Kanban.renderCard(b); },
 
-  renderKanbanCard(b) {
-    const ts=this.toSlug, d=this.esc.bind(this);
-    const member = this.members.find(m=>m.name===b.assignee);
-    const avatarHtml = member
-      ? `<span class="avatar" style="background:${member.color};width:20px;height:20px;font-size:9px;flex-shrink:0;" title="${d(member.name)}">${d(member.initials)}</span>`
-      : '';
-    const dueHtml    = this.renderDueDate(b.due_date, b.state);
-    const startHtml  = b.start_date ? `<span style="font-size:10px;color:var(--text-faint);">▶ ${this.fmtDate(b.start_date)}</span>` : '';
-    const blocksHtml = b.blocks?.length
-      ? `<span class="kanban-card-blocks">🔗 ${b.blocks.length}</span>` : '';
-    const clientHtml  = this._clientBadge(b.client_id);
-    const versionHtml = b.target_version
-      ? `<span class="kanban-card-version">v${d(b.target_version)}</span>` : '';
-    const refHtml = b.ref_url
-      ? `<a class="kanban-card-link" href="${d(b.ref_url)}" target="_blank"
-           onclick="event.stopPropagation()" title="Lien de référence">🔗 Ref</a>` : '';
-
-    return `<div class="kanban-card kanban-card-prio-${ts(b.priority)}"
-      onclick="Front.openDetail('${d(b.id)}')"
-      style="transition:transform 0.15s,box-shadow 0.15s;">
-
-      <!-- En-tête : type + ID + priorité -->
-      <div class="kanban-card-top">
-        <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-          <span class="kanban-card-type">${d(b.type)}</span>
-          <span class="kanban-card-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)"
-            title="Copier l'ID" style="cursor:pointer;">${d(b.id)}</span>
-        </div>
-        <span class="badge badge-prio-${ts(b.priority)} kanban-card-prio-badge">${d(b.priority)}</span>
-      </div>
-
-      <!-- Titre -->
-      <div class="kanban-card-title">${d(b.title)}</div>
-
-      <!-- Description complète -->
-      <div class="kanban-card-desc">${d(b.description)}</div>
-
-      <!-- État + assigné + échéance -->
-      <div class="kanban-card-footer" style="margin-top:8px;">
-        <span class="badge badge-state-${ts(b.state)} kanban-card-state">${d(b.state)}</span>
-        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-          ${avatarHtml}
-          ${dueHtml}
-        </div>
-      </div>
-
-      <!-- Méta : version, blocs, lien, commentaires -->
-      <div class="kanban-card-meta">
-        ${versionHtml}
-        ${blocksHtml}
-        ${refHtml}
-        <button class="comments-btn" style="font-size:11px;padding:2px 6px;margin-left:auto;"
-          onclick="event.stopPropagation();Front.openComments('${d(b.id)}')">💬</button>
-      </div>
-
-    </div>`;
-  },
-
-  async openComments(bugId) {
-    const bug=this.bugs.find(b=>b.id===bugId);if(!bug)return;
-    document.getElementById('commentsModalTitle').textContent=bug.title;
-    document.getElementById('commentsBugId').textContent=bugId;
-    document.getElementById('commentsList').innerHTML='<div class="comments-loading">Chargement…</div>';
-    document.getElementById('commentsModal').classList.remove('hidden');
-    try{
-      const comments=await DB.fetchComments(bugId);
-      this.renderComments(comments);
-    }catch(e){document.getElementById('commentsList').innerHTML='<div class="comments-error">Erreur.</div>';}
-  },
-
-  renderComments(comments) {
-    const el=document.getElementById('commentsList');
-    if(!comments.length){el.innerHTML='<div class="comments-empty">Aucun commentaire. Soyez le premier !</div>';return;}
-    el.innerHTML=comments.map(c=>`
-      <div class="comment-item">
-        <div class="comment-header">
-          <span class="comment-author">${this.esc(c.author)}</span>
-          <span class="comment-date">${this.fmtDatetime(c.created_at)}</span>
-        </div>
-        <div class="comment-content">${this.esc(c.content)}</div>
-      </div>`).join('');
-  },
-
-  closeComments(){document.getElementById('commentsModal').classList.add('hidden');},
-
-  async submitComment() {
-    const bugId=document.getElementById('commentsBugId').textContent;
-    const author=document.getElementById('commentAuthor').value.trim();
-    const content=document.getElementById('commentContent').value.trim();
-    if(!author||!content){alert('Merci de remplir votre nom et commentaire.');return;}
-    const btn=document.getElementById('btnSubmitComment');btn.textContent='Envoi…';btn.disabled=true;
-    try{
-      await DB.insertComment(bugId,author,content);
-      document.getElementById('commentAuthor').value='';document.getElementById('commentContent').value='';
-      const comments=await DB.fetchComments(bugId);this.renderComments(comments);
-    }catch(e){alert('Erreur : '+e.message);}
-    finally{btn.textContent='Publier';btn.disabled=false;}
-  },
+  async openComments(bugId) { await Comments.open(bugId); },
+  renderComments(c) { Comments.render(c); },
+  closeComments() { Comments.close(); },
+  async submitComment() { await Comments.submit(); },
 
 
   /* ---- TIMELINE ---- */

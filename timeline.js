@@ -697,7 +697,7 @@ async renderTimeline() {
             '<div class="req-item-tags">' +
               '<span class="badge badge-type-' + ts(r.type)     + '" style="font-size:10px;">' + d(r.type)     + '</span>' +
               '<span class="badge badge-cat-'  + ts(r.category) + '" style="font-size:10px;">' + d(r.category) + '</span>' +
-              (r.client_id ? this._clientBadge(r.client_id) : '') +
+              (r.client_id ? clientBadge(r.client_id, this._ctx?.clients||this.clients||[]) : '') +
             '</div>' +
           '</div>' +
           actions +

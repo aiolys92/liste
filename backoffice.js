@@ -37,6 +37,9 @@ const BO = {
   // INIT
   // ============================================================
   async init() {
+    Detail.setup(this);
+    Comments.setup(this, true);
+    Kanban.setup(this, 'BO');
     Timeline.setup(this, 'BO');
     this.bindTabEvents();
     this.bindTableEvents();
@@ -274,27 +277,27 @@ const BO = {
   },
 
   renderRow(b) {
-    const ts=this.toSlug,d=this.esc.bind(this);
+    const ts=toSlug,d=esc;
     const member=this.members.find(m=>m.name===b.assignee);
     const avatarHtml = member
       ? `<span class="avatar" style="background:${member.color}" title="${d(member.name)}">${d(member.initials)}</span>`
       : `<span class="avatar avatar-unassigned" title="Non assigné">·</span>`;
-    const dueDateHtml = this.renderDueDate(b.due_date, b.state);
+    const dueDateHtml = renderDueDate(b.due_date, b.state);
     const blocksHtml  = b.blocks?.length ? `<span class="block-tag" style="font-size:10px;padding:1px 5px;">🔗 ${b.blocks.length}</span>` : '';
     const isChecked   = this.selected.has(b.id);
-    return `<tr class="${isChecked?'selected-row':''} clickable-row" onclick="BO.openDetail('${d(b.id)}')">
-      <td><input type="checkbox" class="row-checkbox" data-id="${d(b.id)}" ${isChecked?'checked':''} onchange="BO.toggleSelect('${d(b.id)}',this.checked)" onclick="event.stopPropagation()"></td>
-      <td><span class="badge badge-type-${ts(b.type)}">${d(b.type)}</span></td>
-      <td><span class="badge badge-cat-${ts(b.category)}">${d(b.category)}</span></td>
-      <td><span class="bug-id" onclick="event.stopPropagation();copyId('${d(b.id)}',this)" title="Cliquer pour copier">${d(b.id)}</span>${blocksHtml}</td>
-      <td>${this._clientBadge(b.client_id)}</td>
-      <td><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
-      <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
+    return `<tr class="${isChecked?'selected-row':''} clickable-row" onclick="BO.openDetail('${esc(b.id)}')">
+      <td><input type="checkbox" class="row-checkbox" data-id="${esc(b.id)}" ${isChecked?'checked':''} onchange="BO.toggleSelect('${esc(b.id)}',this.checked)" onclick="event.stopPropagation()"></td>
+      <td><span class="badge badge-type-${ts(b.type)}">${esc(b.type)}</span></td>
+      <td><span class="badge badge-cat-${ts(b.category)}">${esc(b.category)}</span></td>
+      <td><span class="bug-id" onclick="event.stopPropagation();copyId('${esc(b.id)}',this)" title="Cliquer pour copier">${esc(b.id)}</span>${blocksHtml}</td>
+      <td>${clientBadge(b.client_id, this._ctx?.clients||this.clients||[])}</td>
+      <td><div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div></td>
+      <td><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${esc(b.priority)}</span></td>
       <td>${this.renderStateDropdown(b)}</td>
       <td style="text-align:center;">${avatarHtml}</td>
-      <td><div class="date-main">${b.start_date ? this.fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
+      <td><div class="date-main">${b.start_date ? fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
       <td>${dueDateHtml}</td>
-      <td><button class="action-menu-btn" onclick="event.stopPropagation();BO.openActionModal('${d(b.id)}')" title="Actions">···</button></td>
+      <td><button class="action-menu-btn" onclick="event.stopPropagation();BO.openActionModal('${esc(b.id)}')" title="Actions">···</button></td>
     </tr>`;
   },
 
@@ -304,24 +307,24 @@ const BO = {
     const d     = new Date(due);
     const diff  = Math.ceil((d-today)/(1000*60*60*24));
     const done  = state==='Résolu'||state==='Fermé';
-    let cls='ok', label=this.fmtDate(due);
-    if (!done && diff<0)       { cls='overdue';  label=`⚠ ${this.fmtDate(due)}`; }
-    else if (!done && diff<=3) { cls='due-soon'; label=`⏰ ${this.fmtDate(due)}`; }
+    let cls='ok', label=fmtDate(due);
+    if (!done && diff<0)       { cls='overdue';  label=`⚠ ${fmtDate(due)}`; }
+    else if (!done && diff<=3) { cls='due-soon'; label=`⏰ ${fmtDate(due)}`; }
     return `<span class="due-date ${cls}" title="${due}">${label}</span>`;
   },
 
   renderStateDropdown(b) {
-    const ts=this.toSlug,d=this.esc.bind(this);
+    const ts=toSlug,d=esc;
     return `<span class="badge badge-state-${ts(b.state)} state-badge-btn"
-      onclick="event.stopPropagation();BO.openStateModal('${d(b.id)}')"
-      title="Changer l'état"><span class="badge-dot"></span>${d(b.state)} ▾</span>`;
+      onclick="event.stopPropagation();BO.openStateModal('${esc(b.id)}')"
+      title="Changer l'état"><span class="badge-dot"></span>${esc(b.state)} ▾</span>`;
   },
 
   openStateModal(id) {
     const bug = this.bugs.find(b => b.id === id);
     if (!bug) return;
-    const d  = this.esc.bind(this);
-    const ts = this.toSlug;
+    const d  = esc;
+    const ts = toSlug;
     document.getElementById('stateModalSubtitle').innerHTML =
       '<span class="bug-id">' + d(bug.id) + '</span>';
     document.getElementById('stateModalTitle').textContent = bug.title;
@@ -622,50 +625,10 @@ const BO = {
   // ============================================================
   // COMMENTAIRES
   // ============================================================
-  async openComments(bugId){
-    const bug=this.bugs.find(b=>b.id===bugId);if(!bug)return;
-    document.getElementById('commentsModalTitle').textContent=bug.title;
-    document.getElementById('commentsBugId').textContent=bugId;
-    document.getElementById('commentsList').innerHTML='<div class="comments-loading">Chargement…</div>';
-    document.getElementById('commentsModal').classList.remove('hidden');
-    try{
-      const comments=await DB.fetchComments(bugId);
-      this._renderComments(comments,true);
-    }catch(e){document.getElementById('commentsList').innerHTML='<div class="comments-error">Erreur.</div>';}
-  },
-
-  _renderComments(comments,canDelete){
-    const el=document.getElementById('commentsList');
-    if(!comments.length){el.innerHTML='<div class="comments-empty">Aucun commentaire.</div>';return;}
-    el.innerHTML=comments.map(c=>`
-      <div class="comment-item" id="comment-${c.id}">
-        <div class="comment-header">
-          <span class="comment-author">${this.esc(c.author)}</span>
-          <span class="comment-date">${this.fmtDatetime(c.created_at)}</span>
-          ${canDelete?`<button class="comment-delete" onclick="BO.deleteComment(${c.id})">×</button>`:''}
-        </div>
-        <div class="comment-content">${this.esc(c.content)}</div>
-      </div>`).join('');
-  },
-
-  closeComments(){document.getElementById('commentsModal').classList.add('hidden');},
-
-  async submitComment(){
-    const bugId=document.getElementById('commentsBugId').textContent;
-    const author=document.getElementById('commentAuthor').value.trim();
-    const content=document.getElementById('commentContent').value.trim();
-    if(!author||!content){this.showNotif('Remplissez tous les champs.',true);return;}
-    const btn=document.getElementById('btnSubmitComment');
-    btn.textContent='Envoi…';btn.disabled=true;
-    try{
-      await DB.insertComment(bugId,author,content);
-      document.getElementById('commentAuthor').value='';
-      document.getElementById('commentContent').value='';
-      const comments=await DB.fetchComments(bugId);
-      this._renderComments(comments,true);
-    }catch(e){this.showNotif('Erreur : '+e.message,true);}
-    finally{btn.textContent='Publier';btn.disabled=false;}
-  },
+  async openComments(bugId) { await Comments.open(bugId); },
+  renderComments(c) { Comments.render(c); },
+  closeComments() { Comments.close(); },
+  async submitComment() { await Comments.submit(); },
 
   async deleteComment(id){
     if(!confirm('Supprimer ce commentaire ?'))return;
@@ -694,14 +657,14 @@ const BO = {
         <div class="history-item">
           <div class="history-dot"></div>
           <div class="history-body">
-            <span class="history-author">${this.esc(h.author)}</span>
-            <span class="history-field"> · ${this.esc(h.field)}</span>
+            <span class="history-author">${esc(h.author)}</span>
+            <span class="history-field"> · ${esc(h.field)}</span>
             <div class="history-values">
-              <span class="history-old">${this.esc(h.old_value||'—')}</span>
+              <span class="history-old">${esc(h.old_value||'—')}</span>
               <span class="history-arrow">→</span>
-              <span class="history-new">${this.esc(h.new_value||'—')}</span>
+              <span class="history-new">${esc(h.new_value||'—')}</span>
             </div>
-            <div class="history-date">${this.fmtDatetime(h.created_at)}</div>
+            <div class="history-date">${fmtDatetime(h.created_at)}</div>
           </div>
         </div>`).join('');
     }catch(e){document.getElementById('historyList').innerHTML='<div class="comments-error">Erreur.</div>';}
@@ -729,18 +692,18 @@ const BO = {
     document.getElementById('acceptReqId').value = reqId;
     const ps = document.getElementById('acceptPriority');
     if (ps) {
-      ps.innerHTML = this.config.priorities.map(p => '<option value="' + this.esc(p) + '">' + this.esc(p) + '</option>').join('');
+      ps.innerHTML = this.config.priorities.map(p => '<option value="' + esc(p) + '">' + esc(p) + '</option>').join('');
       ps.value = 'Moyenne';
     }
     const ss = document.getElementById('acceptState');
     if (ss) {
-      ss.innerHTML = this.config.states.map(s => '<option value="' + this.esc(s) + '">' + this.esc(s) + '</option>').join('');
+      ss.innerHTML = this.config.states.map(s => '<option value="' + esc(s) + '">' + esc(s) + '</option>').join('');
       ss.value = 'Nouveau';
     }
     const as = document.getElementById('acceptAssignee');
     if (as) {
       as.innerHTML = '<option value="">— Non assigné —</option>' +
-        this.members.map(m => '<option value="' + this.esc(m.name) + '">' + this.esc(m.name) + '</option>').join('');
+        this.members.map(m => '<option value="' + esc(m.name) + '">' + esc(m.name) + '</option>').join('');
     }
     const dd = document.getElementById('acceptDueDate');
     if (dd) dd.value = '';

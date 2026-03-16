@@ -32,39 +32,6 @@ function showToast(msg, type = 'success') {
   _toastTimer = setTimeout(() => el.classList.add('hidden'), 2400);
 }
 
-// --- Nav hamburger ---
-function initHamburger() {
-  const nav = document.querySelector('.header-nav');
-  if (!nav) return;
-
-  // Wrap des liens dans .nav-links
-  const links = [...nav.querySelectorAll('a, button:not(.nav-hamburger)')];
-  const wrapper = document.createElement('div');
-  wrapper.className = 'nav-links';
-  links.forEach(l => wrapper.appendChild(l));
-  nav.appendChild(wrapper);
-
-  // Bouton hamburger
-  const btn = document.createElement('button');
-  btn.className = 'nav-hamburger';
-  btn.innerHTML = '☰';
-  btn.setAttribute('aria-label', 'Menu');
-  btn.addEventListener('click', e => {
-    e.stopPropagation();
-    wrapper.classList.toggle('open');
-    btn.innerHTML = wrapper.classList.contains('open') ? '✕' : '☰';
-  });
-  nav.insertBefore(btn, wrapper);
-
-  // Fermer au clic extérieur
-  document.addEventListener('click', () => {
-    wrapper.classList.remove('open');
-    btn.innerHTML = '☰';
-  });
-}
-
-document.addEventListener('DOMContentLoaded', initHamburger);
-
 // ============================================
 // MARQUEE — défilement du texte si tronqué
 // Seul le contenu intérieur bouge, pas le bloc
@@ -155,3 +122,43 @@ document.addEventListener('DOMContentLoaded', () => {
   initMarquee();
   _marqueeObserver.observe(document.body, { childList: true, subtree: true });
 });
+
+// ============================================
+// UTILITAIRES PARTAGÉS — fonctions globales
+// ============================================
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+
+function fmtDatetime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toSlug(str) {
+  return String(str||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+}
+
+function renderDueDate(due, state) {
+  if (!due) return '<span style="color:var(--text-faint)">—</span>';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff  = Math.ceil((new Date(due) - today) / 864e5);
+  const done  = state === 'Résolu' || state === 'Fermé';
+  if (done) return `<span class="due-date ok">${fmtDate(due)}</span>`;
+  if (diff < 0)  return `<span class="due-date overdue">⚠ ${fmtDate(due)}</span>`;
+  if (diff <= 3) return `<span class="due-date due-soon">⏰ ${fmtDate(due)}</span>`;
+  return `<span class="due-date ok">${fmtDate(due)}</span>`;
+}
+
+function clientBadge(clientId, clients) {
+  if (!clientId || !clients) return '';
+  const c = clients.find(x => x.id == clientId);
+  if (!c) return '';
+  return `<span class="client-badge" style="background:${c.color}20;border:1px solid ${c.color}50;color:${c.color};">${esc(c.name)}</span>`;
+}
