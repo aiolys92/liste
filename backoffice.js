@@ -960,6 +960,8 @@ const BO = {
     btn.textContent='Sauvegarde…';btn.disabled=true;
     try{
       await DB.updateConfig(key,this.config[key]);
+      // Invalider le cache pour forcer le rechargement au prochain accès
+      if(typeof Cache!=='undefined') Cache.invalidate(Cache.keys.config);
       this.populateFilters();this.populateFormSelects();
       this.showNotif(`✓ ${key==='types'?'Types':'Catégories'} sauvegardés`);
     }catch(e){this.showNotif('Erreur : '+e.message,true);}
