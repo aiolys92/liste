@@ -158,12 +158,12 @@ const Dashboard = {
             </span>
           </div>
           <div class="db-members-grid">
-            ${memberStats.map(m => {
+            ${memberStats.map((m, i) => {
               // Couleur de la barre selon la pression
               const barColor = m.chargeWeekPct >= 80 ? '#ff5252' : m.chargeWeekPct >= 50 ? '#ffd040' : '#70d060';
               const pressureLabel = m.chargeWeekPct >= 80 ? '🔴 Surchargé' : m.chargeWeekPct >= 50 ? '🟡 Chargé' : '🟢 Disponible';
               return `
-              <div class="db-member-card" onclick="DashboardMemberModal.open(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+              <div class="db-member-card" onclick="DashboardMemberModal.open(${i})"
                 style="cursor:pointer;flex-direction:column;align-items:stretch;gap:10px;">
                 <!-- Ligne principale -->
                 <div style="display:flex;align-items:center;gap:10px;">
@@ -200,8 +200,8 @@ const Dashboard = {
 
         document.getElementById('dashContent').insertAdjacentHTML('beforeend', membersHtml);
 
-        // Stocker pour la modale
         window._dashMemberStats = memberStats;
+        window._dashBugsAll = Dashboard.bugs;
       }).catch(()=>{});
     }
 
