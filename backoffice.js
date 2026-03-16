@@ -110,13 +110,18 @@ const BO = {
 
   switchTab(tab) {
     this.activeTab = tab;
+    // Panels — afficher/cacher indépendamment des tab buttons
     ['bugs','config','timeline','requests'].forEach(t => {
-      document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`)?.classList.toggle('tab-active', t===tab);
-      document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`)?.style && (document.getElementById(`panel${t.charAt(0).toUpperCase()+t.slice(1)}`).style.display = t===tab?'':'none');
+      const key    = t.charAt(0).toUpperCase() + t.slice(1);
+      const tabEl  = document.getElementById('tab' + key);
+      const panel  = document.getElementById('panel' + key);
+      tabEl?.classList.toggle('tab-active', t === tab);
+      if (panel) panel.style.display = t === tab ? '' : 'none';
     });
-    document.getElementById('btnNewBug').style.display = tab==='bugs' ? '' : 'none';
-    if (tab==='requests') this.renderRequestsTab();
-    if (tab==='timeline') this.renderTimeline();
+    const btnNew = document.getElementById('btnNewBug');
+    if (btnNew) btnNew.style.display = tab === 'bugs' ? '' : 'none';
+    if (tab === 'requests') this.renderRequestsTab();
+    if (tab === 'timeline') this.renderTimeline();
   },
 
   // ============================================================
