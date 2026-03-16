@@ -558,6 +558,11 @@ const BO = {
         }
         const idx=this.bugs.findIndex(b=>b.id===id);
         if(idx!==-1)this.bugs[idx]={...this.bugs[idx],...data};
+        // Mettre à jour _tlBugs aussi si chargé
+        if(this._tlBugs){
+          const tlIdx=this._tlBugs.findIndex(b=>b.id===id);
+          if(tlIdx!==-1)this._tlBugs[tlIdx]={...this._tlBugs[tlIdx],...data};
+        }
         this.showNotif(`✓ Mission ${id} mise à jour`);
       } else {
         const newId=DB.nextId(this.bugs);
@@ -567,7 +572,9 @@ const BO = {
         this.showNotif(`✓ Mission ${newId} créée`);
       }
       this._formDirty = false;
+      this._tlBugsLoaded = false;
       this.closeModal(); this.renderStats(); this.render();
+      if (this.activeTab === 'timeline') this.renderTimeline();
     } catch(e){this.showNotif('Erreur : '+e.message,true);}
     finally{btn.textContent='Enregistrer';btn.disabled=false;}
   },
@@ -710,8 +717,20 @@ const BO = {
     filters: { category: '', assignee: '', state: '' }
   },
 
-  renderTimeline() {
+  async renderTimeline() {
     const container = document.getElementById('panelTimeline');
+    // Charger toutes les missions pour la timeline (pas seulement la page courante)
+    if (!this._tlBugsLoaded) {
+      container.innerHTML = '<div class="empty-state" style="padding:48px"><span class="empty-icon">📅</span><p>Chargement…</p></div>';
+      try {
+        const result = await DB.fetchBugs();
+        this._tlBugs = result;
+        this._tlBugsLoaded = true;
+      } catch(e) {
+        container.innerHTML = '<div class="empty-state" style="padding:48px"><span class="empty-icon">⚠</span><p>Erreur de chargement.</p></div>';
+        return;
+      }
+    }
     const tl = this.timeline;
 
     // Toolbar
@@ -788,7 +807,7 @@ const BO = {
     if (!bugs.length) { board.innerHTML='<div class="empty-state" style="padding:48px"><span class="empty-icon">📅</span><p>Aucune mission ne correspond aux filtres.</p></div>'; return; }
 
     // Plage de dates
-    const allDates = bugs.flatMap(b=>[b.date,b.due_date].filter(Boolean)).map(d=>new Date(d));
+    const allDates = bugs.flatMap(b=>[b.start_date||b.date, b.due_date].filter(Boolean)).map(d=>new Date(d));
     let minDate = new Date(Math.min(...allDates));
     let maxDate = new Date(Math.max(...allDates));
     // Étendre
@@ -890,7 +909,7 @@ const BO = {
     });
 
     // No-date list
-    const noDates = this.bugs.filter(b=>!b.date);
+    const noDates = (this._tlBugs || this.bugs).filter(b=>!b.date);
 
     board.innerHTML = `
       <div class="tl-wrap" id="tlWrap">
