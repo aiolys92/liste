@@ -292,7 +292,7 @@ const BO = {
       <td>${this.renderStateDropdown(b)}</td>
       <td style="text-align:center;">${avatarHtml}</td>
       <td>${dueDateHtml}</td>
-      <td><div class="date-main">${this.fmtDate(b.date)}</div></td>
+      <td><div class="date-main">${b.start_date ? this.fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
       <td><button class="action-menu-btn" onclick="event.stopPropagation();BO.openActionModal('${d(b.id)}')" title="Actions">···</button></td>
     </tr>`;
   },
@@ -459,6 +459,7 @@ const BO = {
     document.getElementById('fDate').value     =bug.date;
     document.getElementById('fDueDate').value  =bug.due_date||'';
     if(document.getElementById('fRefUrl')) document.getElementById('fRefUrl').value=bug.ref_url||'';
+    if(document.getElementById('fStartDate')) document.getElementById('fStartDate').value=bug.start_date||'';
     if(document.getElementById('fTargetVersion')) document.getElementById('fTargetVersion').value=bug.target_version||'';
     this._populateClientSelect(bug.client_id||null);
     this.updateCounter('fTitle',120); this.updateCounter('fDescription',2000);
@@ -845,7 +846,7 @@ const BO = {
         rowsHtml += `<div class="tl-group-header"><span>${this.esc(group.label)}</span></div>`;
       }
       group.items.forEach(b => {
-        const startX = toX(b.date);
+        const startX = toX(b.start_date || b.date);
         const endX   = b.due_date ? toX(b.due_date) : startX + DAY_PX*3;
         const barW   = Math.max(endX - startX, DAY_PX*0.8);
         const color  = stateColors[b.state] || '#888';
@@ -1217,7 +1218,8 @@ const BO = {
           '</div>' +
           '<div class="detail-grid">' +
             '<div class="detail-field"><div class="detail-section-label">Assigné à</div><div class="detail-field-value">' + avatarHtml + '</div></div>' +
-            '<div class="detail-field"><div class="detail-section-label">Date arrivée</div><div class="detail-field-value">' + this.fmtDate(bug.date) + '</div></div>' +
+            '<div class="detail-field"><div class="detail-section-label">Date de début</div><div class="detail-field-value">' + (bug.start_date ? this.fmtDate(bug.start_date) : '<span style="color:var(--text-faint)">—</span>') + '</div></div>' +
+          '<div class="detail-field"><div class="detail-section-label">Date de création</div><div class="detail-field-value">' + this.fmtDate(bug.date) + '</div></div>' +
             '<div class="detail-field"><div class="detail-section-label">Échéance</div><div class="detail-field-value">' + dueDateHtml + '</div></div>' +
             '<div class="detail-field"><div class="detail-section-label">Priorité</div><div class="detail-field-value"><span class="badge badge-prio-' + ts(bug.priority) + '"><span class="badge-dot"></span>' + d(bug.priority) + '</span></div></div>' +
           '</div>' +

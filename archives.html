@@ -342,7 +342,9 @@
             <div class="detail-grid">
               <div class="detail-field"><div class="detail-section-label">Assigné à</div>
                 <div class="detail-field-value">${d(bug.assignee)||'<span style="color:var(--text-faint)">Non assigné</span>'}</div></div>
-              <div class="detail-field"><div class="detail-section-label">Date arrivée</div>
+              <div class="detail-field"><div class="detail-section-label">Date de début</div>
+                <div class="detail-field-value">${bug.start_date ? this.fmtDate(bug.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></div>
+              <div class="detail-field"><div class="detail-section-label">Date de création</div>
                 <div class="detail-field-value">${this.fmtDate(bug.date)}</div></div>
               <div class="detail-field"><div class="detail-section-label">Échéance</div>
                 <div class="detail-field-value">${bug.due_date ? this.fmtDate(bug.due_date) : '<span style="color:var(--text-faint)">—</span>'}</div></div>

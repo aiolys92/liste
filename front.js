@@ -262,7 +262,7 @@ const Front = {
       <td><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
       <td style="text-align:center;">${avatarHtml}</td>
       <td>${dueDateHtml}</td>
-      <td><div class="date-main">${this.fmtDate(b.date)}</div></td>
+      <td><div class="date-main">${b.start_date ? this.fmtDate(b.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div></td>
       <td style="text-align:center;"><button class="comments-btn" onclick="event.stopPropagation();Front.openComments('${d(b.id)}')" title="Commentaires">💬</button></td>
     </tr>`;
   },
@@ -321,7 +321,8 @@ const Front = {
     const avatarHtml = member
       ? `<span class="avatar" style="background:${member.color};width:20px;height:20px;font-size:9px;flex-shrink:0;" title="${d(member.name)}">${d(member.initials)}</span>`
       : '';
-    const dueHtml = this.renderDueDate(b.due_date, b.state);
+    const dueHtml    = this.renderDueDate(b.due_date, b.state);
+    const startHtml  = b.start_date ? `<span style="font-size:10px;color:var(--text-faint);">▶ ${this.fmtDate(b.start_date)}</span>` : '';
     const blocksHtml = b.blocks?.length
       ? `<span class="kanban-card-blocks">🔗 ${b.blocks.length}</span>` : '';
     const clientHtml  = this._clientBadge(b.client_id);
@@ -656,7 +657,11 @@ const Front = {
               <div class="detail-field-value">${this._clientBadge(bug.client_id)||'<span style="color:var(--text-faint)">—</span>'}</div>
             </div>
             <div class="detail-field">
-              <div class="detail-section-label">Date d'arrivée</div>
+              <div class="detail-section-label">Date de début</div>
+              <div class="detail-field-value">${bug.start_date ? this.fmtDate(bug.start_date) : '<span style="color:var(--text-faint)">—</span>'}</div>
+            </div>
+            <div class="detail-field">
+              <div class="detail-section-label">Date de création</div>
               <div class="detail-field-value">${this.fmtDate(bug.date)}</div>
             </div>
             <div class="detail-field">
