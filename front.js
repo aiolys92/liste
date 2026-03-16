@@ -309,6 +309,28 @@ const Front = {
   setTlFilter(k,v)  { this.timeline.filters[k]=v;              Timeline._draw(); },
   toggleTlFocus()   { this.timeline.focusMode=!this.timeline.focusMode; Timeline.render(); },
   scrollTlToday()   { Timeline.scrollTlToday(); },
+  async openDetail(id) { await Detail.open(id); },
+  closeDetail()        { Detail.close(); },
+
+
+  exportCSV() {
+    const data    = this.bugs;
+    const headers = ['ID','Type','Catégorie','Priorité','Titre','Description','État','Assigné','Début','Échéance'];
+    const escCsv  = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+    const rows    = data.map(b => [
+      b.id, b.type, b.category, b.priority, b.title, b.description,
+      b.state, b.assignee||'', b.start_date||'', b.due_date||''
+    ].map(escCsv).join(','));
+    const csv  = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'missions-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  },
+
+
 };
 
 document.addEventListener('DOMContentLoaded',()=>Front.init());

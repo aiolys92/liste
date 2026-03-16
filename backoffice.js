@@ -1081,6 +1081,107 @@ const BO = {
   },
 
 
+  // ============================================================
+  // UTILS / NOTIFICATIONS
+  // ============================================================
+  showNotif(msg, isError=false) {
+    const el = document.getElementById('notification');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('error', isError);
+    el.classList.remove('hidden');
+    clearTimeout(this._notifTimer);
+    this._notifTimer = setTimeout(() => el.classList.add('hidden'), 3200);
+  },
+
+  updateCounter(id, max) {
+    const el  = document.getElementById(id);
+    const cnt = document.getElementById(id + 'Counter');
+    if (!el || !cnt) return;
+    const update = () => {
+      const len = el.value.length;
+      cnt.textContent = len + '/' + max;
+      cnt.style.color = len > max * 0.9 ? 'var(--p-critical)' : 'var(--text-faint)';
+    };
+    el.removeEventListener('input', el._counterCb);
+    el._counterCb = update;
+    el.addEventListener('input', update);
+    update();
+  },
+
+  _populateClientSelect(selectedId) {
+    const el = document.getElementById('fClient');
+    if (!el) return;
+    el.innerHTML = '<option value="">— Aucun client —</option>' +
+      this.clients.map(c =>
+        '<option value="' + c.id + '"' + (c.id == selectedId ? ' selected' : '') + '>' + esc(c.name) + '</option>'
+      ).join('');
+  },
+
+  _renderComments(comments, canDelete) {
+    const el = document.getElementById('commentsList');
+    if (!el) return;
+    if (!comments.length) { el.innerHTML = '<div class="comments-empty">Aucun commentaire.</div>'; return; }
+    el.innerHTML = comments.map(c =>
+      '<div class="comment-item" id="comment-' + c.id + '">' +
+        '<div class="comment-header">' +
+          '<span class="comment-author">' + esc(c.author) + '</span>' +
+          '<span class="comment-date">' + fmtDatetime(c.created_at) + '</span>' +
+          (canDelete ? '<button class="comment-delete" onclick="BO.deleteComment(' + c.id + ')">×</button>' : '') +
+        '</div>' +
+        '<div class="comment-content">' + esc(c.content) + '</div>' +
+      '</div>'
+    ).join('');
+  },
+
+  // ============================================================
+  // EXPORT CSV
+  // ============================================================
+  exportCSV() {
+    const data = this.bugs;
+    const headers = ['ID','Type','Catégorie','Priorité','Titre','Description','État','Assigné','Début','Échéance'];
+    const escCsv  = v => '"' + String(v||'').replace(/"/g,'""') + '"';
+    const rows    = data.map(b => [
+      b.id, b.type, b.category, b.priority, b.title, b.description,
+      b.state, b.assignee||'', b.start_date||'', b.due_date||''
+    ].map(escCsv).join(','));
+    const csv  = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'command-post-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  },
+
+  // ============================================================
+  // MODALE ACTIONS RAPIDES
+  // ============================================================
+  openActionModal(id) {
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    document.getElementById('actionModalTitle').textContent = bug.id + ' — ' + bug.title;
+    document.getElementById('actionBugId').value = id;
+    document.getElementById('actionModalOverlay').classList.remove('hidden');
+  },
+
+  closeActionModal() {
+    document.getElementById('actionModalOverlay').classList.add('hidden');
+  },
+
+  async doAction(action) {
+    const id  = document.getElementById('actionBugId').value;
+    const bug = this.bugs.find(b => b.id === id);
+    if (!bug) return;
+    this.closeActionModal();
+    if (action === 'edit')    { this.openEdit(id); return; }
+    if (action === 'delete')  { this.openDelete(id); return; }
+    if (action === 'archive') { await this.archiveMission(id); return; }
+    if (action === 'history') { await this.openHistory(id); return; }
+    if (action === 'comment') { await this.openComments(id); return; }
+  },
+
+
 };
 
 document.addEventListener('DOMContentLoaded',()=>BO.init());
