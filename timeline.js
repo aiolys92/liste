@@ -160,7 +160,16 @@ const Timeline = {
     let rowsHtml = '';
     groups.forEach(group => {
       if (group.label !== null) {
-        rowsHtml += `<div class="tl-group-header"><span>${esc(group.label)}</span></div>`;
+        const gcfg = this._ctx.config;
+        const isCategory = tl.group === 'category';
+        const isBadge    = isCategory && gcfg?.categories?.includes(group.label);
+        const labelHtml  = isBadge
+          ? `<span class="badge badge-cat-${toSlug(group.label)} tl-group-badge">${esc(group.label)}</span>`
+          : `<span class="tl-group-text">${esc(group.label)}</span>`;
+        rowsHtml += `<div class="tl-group-row">
+          <div class="tl-group-label">${labelHtml}</div>
+          <div class="tl-group-track" style="width:${totalW}px;">${weekendBg}${gridLines}</div>
+        </div>`;
       }
       group.items.forEach(b => {
         const startX = toX(b.start_date || b.date);
