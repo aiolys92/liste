@@ -2647,3 +2647,29 @@ input[type="date"].form-input { color-scheme: dark; }
 
 /* Retirer l'ancien tl-group-header */
 .tl-group-header { display: none; }
+
+/* ============================================
+   QUICK EDIT — items adaptables
+   ============================================ */
+#qeBody .action-modal-icon {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: inherit;
+  flex-shrink: 1;
+}
+
+#qeBody .action-modal-item {
+  padding: 9px 14px;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+#qeBody {
+  min-width: 240px;
+}
