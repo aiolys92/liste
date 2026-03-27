@@ -486,6 +486,7 @@ const BO = {
     document.getElementById('fDueDate').value='';
     document.getElementById('fBlocks').selectedIndex=-1;
     document.getElementById('blocksPreview').innerHTML='';
+    this._populateClientSelect(null);
     document.getElementById('modalOverlay').classList.remove('hidden');
     document.getElementById('fTitle').focus();
     this._formDirty = false;
