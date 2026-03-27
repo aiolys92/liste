@@ -1187,14 +1187,26 @@ const BO = {
     html += '</div>';
     html += '<div class="config-add-row" style="flex-direction:column;align-items:stretch;gap:8px;">';
     html += '<input type="text" class="form-input" id="newClientName" placeholder="Nom du client..." maxlength="60">';
-    html += '<div style="display:flex;gap:8px;">';
-    html += '<select class="form-select" id="newClientColor" style="flex:1;">';
-    COLORS.forEach(c => { html += '<option value="' + c + '">' + c + '</option>'; });
-    html += '</select>';
-    html += '<button class="btn btn-primary" onclick="BO.addClient()">+ Ajouter</button>';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+    html += '<span style="font-size:11px;color:var(--text-muted);">Couleur :</span>';
+    html += '<div style="display:flex;gap:6px;flex-wrap:wrap;" id="clientColorPicker">';
+    COLORS.forEach((c,i) => {
+      html += '<div onclick="BO._pickClientColor(this,\'' + c + '\')" style="width:22px;height:22px;border-radius:50%;background:' + c + ';cursor:pointer;border:2px solid ' + (i===0?'white':'transparent') + ';transition:border 0.15s;" data-color="' + c + '"></div>';
+    });
+    html += '</div>';
+    html += '<input type="hidden" id="newClientColor" value="' + COLORS[0] + '">';
+    html += '<button class="btn btn-primary" onclick="BO.addClient()" style="margin-left:auto;">+ Ajouter</button>';
     html += '</div></div></div>';
     container.innerHTML = html;
   },
+
+  _pickClientColor(el, color) {
+    document.getElementById('newClientColor').value = color;
+    document.querySelectorAll('#clientColorPicker div').forEach(d => {
+      d.style.border = '2px solid ' + (d.dataset.color === color ? 'white' : 'transparent');
+    });
+  },
+
 
   async addClient() {
     const name  = document.getElementById('newClientName').value.trim();
