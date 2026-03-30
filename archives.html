@@ -54,7 +54,7 @@
         </thead>
         <tbody id="bugsTableBody">
           <tr id="loadingRow">
-            <td colspan="8" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px;"><span style="opacity:.5">Chargement…</span></td>
+            <td colspan="10" style="text-align:center;padding:48px;color:var(--text-muted);font-size:13px;"><span style="opacity:.5">Chargement…</span></td>
           </tr>
         </tbody>
       </table>
@@ -215,8 +215,8 @@
         <td><span class="badge badge-cat-${toSlug(b.category)}"><span class="badge-dot"></span>${esc(b.category)}</span></td>
         <td><span class="bug-id">${esc(b.id)}</span></td>
         <td>${clientBadge(b.client_id, Archives.clients)}</td>
-        <td><div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div></td>
         <td><span class="badge badge-prio-${toSlug(b.priority)}"><span class="badge-dot"></span>${esc(b.priority)}</span></td>
+        <td><div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div></td>
         <td><span class="badge badge-state-${toSlug(b.state)}"><span class="badge-dot"></span>${esc(b.state)}</span></td>
         <td><div class="date-main">${fmtDate(b.date)}</div></td>
         <td style="text-align:center;">
