@@ -1,5 +1,13 @@
 const SUPABASE_URL   = 'https://pmrmeivebuvyynmehyhh.supabase.co';
 const SUPABASE_ANON  = 'sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-';
+// Helper : évite l'erreur sur les réponses vides (204 No Content)
+async function safeJson(res) {
+  const text = await res.text();
+  if (!text || !text.trim()) return null;
+  try { return JSON.parse(text); } catch(e) { return null; }
+}
+
+
 // Récupérer le token JWT de la session (backoffice) ou utiliser l'anon key (front public)
 function getAuthHeaders() {
   try {
@@ -61,7 +69,7 @@ const DB = {
     if (!res.ok) throw new Error(`Fetch paged error ${res.status}`);
     const range = res.headers.get('Content-Range') || '';
     const total = parseInt(range.split('/')[1]) || 0;
-    const data  = await res.json();
+    const data  = await safeJson(res);
     return { data, total };
   },
 
@@ -74,7 +82,7 @@ const DB = {
       { headers: getAuthHeaders() }
     );
     if (!res.ok) throw new Error(`Stats error ${res.status}`);
-    const data = await res.json();
+    const data = await safeJson(res);
     if (typeof Cache !== 'undefined') Cache.set(Cache.keys.stats, data);
     return data;
   },
@@ -92,7 +100,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs`, {
       method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(bug)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Insert error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Insert error ${res.status}`); }
     return res.json();
   },
 
@@ -100,7 +108,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?id=eq.${encodeURIComponent(id)}`, {
       method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Update error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Update error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.stats);
     return res.json();
   },
@@ -112,7 +120,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?id=eq.${encodeURIComponent(id)}`, {
       method: 'DELETE', headers: getAuthHeaders()
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Delete error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Delete error ${res.status}`); }
     return true;
   },
 
@@ -122,7 +130,7 @@ const DB = {
     if (cached) return cached;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/members?order=name.asc`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Members fetch error ${res.status}`);
-    const data = await res.json();
+    const data = await safeJson(res);
     if (typeof Cache !== 'undefined') Cache.set(Cache.keys.members, data);
     return data;
   },
@@ -131,7 +139,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/members`, {
       method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Member insert error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Member insert error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.members);
     return res.json();
   },
@@ -140,7 +148,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/members?id=eq.${id}`, {
       method: 'DELETE', headers: getAuthHeaders()
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Member delete error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Member delete error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.members);
     return true;
   },
@@ -160,7 +168,7 @@ const DB = {
       method: 'POST', headers: getAuthHeaders(),
       body: JSON.stringify({ bug_id: bugId, author, field, old_value: String(oldValue||''), new_value: String(newValue||'') })
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || "Erreur serveur"); }
     return res.json();
   },
 
@@ -179,7 +187,7 @@ const DB = {
       method: 'POST', headers: getAuthHeaders(),
       body: JSON.stringify({ bug_id: bugId, author, content })
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Comment insert error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Comment insert error ${res.status}`); }
     return res.json();
   },
 
@@ -187,7 +195,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${id}`, {
       method: 'DELETE', headers: getAuthHeaders()
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || "Erreur serveur"); }
     return true;
   },
 
@@ -197,7 +205,7 @@ const DB = {
     if (cached) return cached;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/config`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Config fetch error ${res.status}`);
-    const rows = await res.json();
+    const rows = await safeJson(res);
     const out = {};
     rows.forEach(r => { out[r.key] = r.values; });
     if (typeof Cache !== 'undefined') Cache.set(Cache.keys.config, out);
@@ -213,7 +221,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/config?key=eq.${key}`, {
       method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ values })
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || "Erreur serveur"); }
     return true;
   },
 
@@ -225,7 +233,7 @@ const DB = {
     if (cached) return cached;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?order=name.asc`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Clients fetch error ${res.status}`);
-    const data = await res.json();
+    const data = await safeJson(res);
     if (typeof Cache !== 'undefined') Cache.set('clients', data);
     return data;
   },
@@ -234,7 +242,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
       method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client insert error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Client insert error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate('clients');
     return res.json();
   },
@@ -243,7 +251,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${id}`, {
       method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client update error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Client update error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate('clients');
     return res.json();
   },
@@ -252,7 +260,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${id}`, {
       method: 'DELETE', headers: getAuthHeaders()
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client delete error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Client delete error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate('clients');
     return true;
   },
@@ -269,7 +277,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/requests`, {
       method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Insert error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Insert error ${res.status}`); }
     return res.json();
   },
 
@@ -277,7 +285,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/requests?id=eq.${id}`, {
       method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Update error ${res.status}`); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || `Update error ${res.status}`); }
     return res.json();
   },
 
@@ -285,7 +293,7 @@ const DB = {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/requests?id=eq.${id}`, {
       method: 'DELETE', headers: getAuthHeaders()
     });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+    if (!res.ok) { const e = await safeJson(res); throw new Error(e?.message || "Erreur serveur"); }
     return true;
   },
 
