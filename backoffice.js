@@ -1348,6 +1348,23 @@ const BO = {
   },
 
 
+  async logout() {
+    const SUPABASE_URL  = 'https://pmrmeivebuvyynmehyhh.supabase.co';
+    const SUPABASE_ANON = 'sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-';
+    try {
+      const session = JSON.parse(localStorage.getItem('sb_session') || '{}');
+      if (session.access_token) {
+        await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${session.access_token}` }
+        });
+      }
+    } catch(e) {}
+    localStorage.removeItem('sb_session');
+    window.location.href = 'login.html';
+  },
+
+
 };
 
 document.addEventListener('DOMContentLoaded',()=>BO.init());
