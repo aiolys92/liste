@@ -3,216 +3,117 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Command Post — Accès</title>
+  <title>Command Post — Connexion</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#c8a030">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      background-image:
-        radial-gradient(ellipse 70% 60% at 50% 0%, rgba(200,160,48,0.10) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 30% at 90% 80%, rgba(80,184,255,0.05) 0%, transparent 50%);
-    }
-
-    .login-card {
-      background: var(--bg-overlay);
-      border: 1px solid var(--border-strong);
-      border-radius: var(--r-xl);
-      padding: 44px 40px 36px;
-      width: 100%;
-      max-width: 380px;
-      box-shadow: var(--shadow-lg), 0 0 60px rgba(200,160,48,0.05);
-      position: relative;
-      overflow: hidden;
-      animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(24px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    /* Ligne dorée en haut */
-    .login-card::before {
-      content: '';
-      position: absolute; inset: 0 0 auto 0; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold-mid), transparent);
-    }
-
-    /* Lueur d'ambiance */
-    .login-card::after {
-      content: '';
-      position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
-      width: 200px; height: 200px;
-      background: radial-gradient(circle, rgba(200,160,48,0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    .login-icon {
-      width: 52px; height: 52px;
-      background: var(--gold-ghost);
-      border: 1px solid rgba(200,160,48,0.25);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      margin: 0 auto 20px;
-      position: relative; z-index: 1;
-    }
-
-    .login-title {
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 22px; font-weight: 700;
-      letter-spacing: 2px; text-transform: uppercase;
-      color: var(--text-bright);
-      text-align: center;
-      margin-bottom: 6px;
-    }
-
-    .login-subtitle {
-      font-size: 12px; color: var(--text-muted);
-      text-align: center; margin-bottom: 32px;
-    }
-
-    .login-form { display: flex; flex-direction: column; gap: 16px; }
-
-    .login-label {
-      font-size: 10px; font-weight: 700; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 1px;
-      display: block; margin-bottom: 7px;
-    }
-
-    .login-input {
-      width: 100%;
-      background: var(--bg-raised);
-      border: 1px solid var(--border-base);
-      border-radius: var(--r-md);
-      color: var(--text-bright);
-      padding: 11px 14px;
-      font-size: 14px; font-family: 'DM Sans', sans-serif;
-      outline: none;
-      transition: border-color 0.18s, box-shadow 0.18s;
-    }
-    .login-input::placeholder { color: var(--text-faint); }
-    .login-input:focus {
-      border-color: var(--gold-dim);
-      box-shadow: 0 0 0 3px rgba(200,160,48,0.12);
-    }
-
-    .login-btn {
-      width: 100%;
-      background: var(--gold-mid); border: 1px solid var(--gold-mid);
-      border-radius: var(--r-md); color: #0a0800;
-      padding: 12px; font-size: 14px; font-weight: 700;
-      font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
-      cursor: pointer; transition: all 0.18s; margin-top: 4px;
-    }
-    .login-btn:hover {
-      background: var(--gold-bright); border-color: var(--gold-bright);
-      box-shadow: var(--glow-gold); transform: translateY(-1px);
-    }
-    .login-btn:active { transform: translateY(0); }
-
-    .login-error {
-      background: rgba(255,82,82,0.1);
-      border: 1px solid rgba(255,82,82,0.3);
-      border-radius: var(--r-md);
-      color: var(--p-critical);
-      padding: 10px 14px; font-size: 13px; text-align: center;
-      display: none;
-      animation: shake 0.35s ease;
-    }
-    .login-error.visible { display: block; }
-
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      20%,60%  { transform: translateX(-6px); }
-      40%,80%  { transform: translateX(6px); }
-    }
-
-    .back-link {
-      display: block; text-align: center; margin-top: 20px;
-      font-size: 12px; color: var(--text-muted); text-decoration: none;
-      transition: color 0.15s;
-    }
-    .back-link:hover { color: var(--text-base); }
-  </style>
 </head>
 <body>
-
+<div class="login-wrap">
   <div class="login-card">
-    <div class="login-icon">⚙</div>
-    <div class="login-title">Command Post</div>
-    <div class="login-subtitle">Quartier général de la Direction Artistique</div>
 
-    <form class="login-form" onsubmit="tryLogin(event)">
-      <div>
-        <label class="login-label" for="pwd">Mot de passe</label>
-        <input
-          class="login-input"
-          type="password"
-          id="pwd"
-          placeholder="••••••••••"
-          autocomplete="current-password"
-          autofocus
-        >
-      </div>
+    <div class="login-logo">
+      <span class="login-logo-icon">⬡</span>
+      <span class="login-logo-text">Command Post</span>
+    </div>
 
-      <div class="login-error" id="loginError">
-        Mot de passe incorrect. Réessayez.
-      </div>
+    <div class="login-subtitle">Accès Back-office</div>
 
-      <button type="submit" class="login-btn">Se connecter</button>
-    </form>
+    <div id="loginError" class="login-error hidden"></div>
 
-    <a href="index.html" class="back-link">← Retour au Command Post</a>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="loginEmail" placeholder="admin@exemple.com" autocomplete="email">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%;margin-top:8px;">
+      Connexion
+    </button>
+
+    <div style="margin-top:16px;text-align:center;">
+      <a href="index.html" style="font-size:12px;color:var(--text-faint);">← Retour à la vue publique</a>
+    </div>
+
   </div>
+</div>
 
-  <script>
-    // Vérifier si déjà connecté
-    if (sessionStorage.getItem('bo_auth') === 'ok') {
-      window.location.href = 'backoffice.html';
-    }
+<script>
+  const SUPABASE_URL  = 'https://pmrmeivebuvyynmehyhh.supabase.co';
+  const SUPABASE_ANON = 'sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-';
 
-    // Hash SHA-256 du mot de passe (admin2024)
-    // Pour changer le mot de passe, remplacer cette valeur par le hash du nouveau mot de passe
-    const PASSWORD_HASH = 'a3885103a96f576b457cee7204dc317cb0a3e361c3e68201279b03d5785f95ba';
-
-    async function hashPassword(pwd) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(pwd);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function tryLogin(e) {
-      e.preventDefault();
-      const pwd = document.getElementById('pwd').value;
-      const error = document.getElementById('loginError');
-
-      if (!pwd) return;
-
-      const hash = await hashPassword(pwd);
-      if (hash === PASSWORD_HASH) {
-        sessionStorage.setItem('bo_auth', 'ok');
+  // Si déjà connecté, rediriger
+  const session = localStorage.getItem('sb_session');
+  if (session) {
+    try {
+      const s = JSON.parse(session);
+      if (s.expires_at > Math.floor(Date.now()/1000)) {
         window.location.href = 'backoffice.html';
-      } else {
-        error.classList.add('visible');
-        document.getElementById('pwd').value = '';
-        document.getElementById('pwd').focus();
-        // Reset animation
-        error.style.animation = 'none';
-        error.offsetHeight;
-        error.style.animation = '';
       }
+    } catch(e) { localStorage.removeItem('sb_session'); }
+  }
+
+  // Enter pour valider
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  async function doLogin() {
+    const email    = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const btn      = document.getElementById('loginBtn');
+    const errEl    = document.getElementById('loginError');
+
+    if (!email || !password) {
+      showError('Veuillez remplir tous les champs.');
+      return;
     }
-  </script>
+
+    btn.textContent = 'Connexion…';
+    btn.disabled    = true;
+    errEl.classList.add('hidden');
+
+    try {
+      const res  = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        body:    JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showError(data.error_description || data.msg || 'Email ou mot de passe incorrect.');
+        return;
+      }
+
+      // Stocker la session
+      localStorage.setItem('sb_session', JSON.stringify({
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at:    Math.floor(Date.now()/1000) + data.expires_in,
+      }));
+
+      window.location.href = 'backoffice.html';
+
+    } catch(e) {
+      showError('Erreur réseau. Réessayez.');
+    } finally {
+      btn.textContent = 'Connexion';
+      btn.disabled    = false;
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('loginError');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+</script>
 </body>
 </html>

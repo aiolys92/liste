@@ -4,9 +4,22 @@
 // actions groupées, historique, dark/light toggle
 // ============================================
 
-if (sessionStorage.getItem('bo_auth') !== 'ok') {
-  window.location.href = 'login.html';
-}
+// Vérification session Supabase
+(function() {
+  const session = localStorage.getItem('sb_session');
+  if (!session) { window.location.href = 'login.html'; return; }
+  try {
+    const s = JSON.parse(session);
+    if (!s.access_token || s.expires_at <= Math.floor(Date.now()/1000)) {
+      // Tenter de rafraîchir le token
+      localStorage.removeItem('sb_session');
+      window.location.href = 'login.html';
+    }
+  } catch(e) {
+    localStorage.removeItem('sb_session');
+    window.location.href = 'login.html';
+  }
+})();
 
 const BO = {
   bugs: [],

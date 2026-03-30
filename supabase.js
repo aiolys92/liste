@@ -1,5 +1,24 @@
 const SUPABASE_URL   = 'https://pmrmeivebuvyynmehyhh.supabase.co';
 const SUPABASE_ANON  = 'sb_publishable_oS96m8VAdb2DcfUJby00fw_tpsBXlV-';
+// Récupérer le token JWT de la session (backoffice) ou utiliser l'anon key (front public)
+function getAuthHeaders() {
+  try {
+    const session = JSON.parse(localStorage.getItem('sb_session') || '{}');
+    if (session.access_token && session.expires_at > Math.floor(Date.now()/1000)) {
+      return {
+        'Content-Type':  'application/json',
+        'apikey':        SUPABASE_ANON,
+        'Authorization': `Bearer ${session.access_token}`,
+      };
+    }
+  } catch(e) {}
+  return {
+    'Content-Type':  'application/json',
+    'apikey':        SUPABASE_ANON,
+    'Authorization': `Bearer ${SUPABASE_ANON}`,
+  };
+}
+
 const SUPABASE_HEADERS = {
   'Content-Type':  'application/json',
   'apikey':        SUPABASE_ANON,
@@ -14,7 +33,7 @@ const DB = {
     const url = includeArchived
       ? `${SUPABASE_URL}/rest/v1/bugs?order=date.desc,id.desc`
       : `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&order=date.desc,id.desc`;
-    const res = await fetch(url, { headers: SUPABASE_HEADERS });
+    const res = await fetch(url, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Fetch error ${res.status}`);
     return res.json();
   },
@@ -37,7 +56,7 @@ const DB = {
     const from = (page-1)*perPage;
     const to   = from + perPage - 1;
     const q    = this._buildBugsQuery(filters, sort, dir, includeArchived);
-    const heads = { ...SUPABASE_HEADERS, 'Prefer': 'count=exact', 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
+    const heads = { ...getAuthHeaders(), 'Prefer': 'count=exact', 'Range': `${from}-${to}`, 'Range-Unit': 'items' };
     const res  = await fetch(`${SUPABASE_URL}/rest/v1/bugs?${q}`, { headers: heads });
     if (!res.ok) throw new Error(`Fetch paged error ${res.status}`);
     const range = res.headers.get('Content-Range') || '';
@@ -52,7 +71,7 @@ const DB = {
     if (cached) return cached;
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/bugs?or=(archived.eq.false,archived.is.null)&select=state,priority,category,due_date,created_at,assignee,client_id`,
-      { headers: SUPABASE_HEADERS }
+      { headers: getAuthHeaders() }
     );
     if (!res.ok) throw new Error(`Stats error ${res.status}`);
     const data = await res.json();
@@ -63,7 +82,7 @@ const DB = {
   async fetchArchived() {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/bugs?archived=eq.true&order=date.desc,id.desc`,
-      { headers: SUPABASE_HEADERS }
+      { headers: getAuthHeaders() }
     );
     if (!res.ok) throw new Error(`Fetch archived error ${res.status}`);
     return res.json();
@@ -71,7 +90,7 @@ const DB = {
 
   async insertBug(bug) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs`, {
-      method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(bug)
+      method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(bug)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Insert error ${res.status}`); }
     return res.json();
@@ -79,7 +98,7 @@ const DB = {
 
   async updateBug(id, data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?id=eq.${encodeURIComponent(id)}`, {
-      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+      method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Update error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.stats);
@@ -91,7 +110,7 @@ const DB = {
 
   async deleteBug(id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/bugs?id=eq.${encodeURIComponent(id)}`, {
-      method: 'DELETE', headers: SUPABASE_HEADERS
+      method: 'DELETE', headers: getAuthHeaders()
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Delete error ${res.status}`); }
     return true;
@@ -101,7 +120,7 @@ const DB = {
   async fetchMembers() {
     const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.members);
     if (cached) return cached;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/members?order=name.asc`, { headers: SUPABASE_HEADERS });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/members?order=name.asc`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Members fetch error ${res.status}`);
     const data = await res.json();
     if (typeof Cache !== 'undefined') Cache.set(Cache.keys.members, data);
@@ -110,7 +129,7 @@ const DB = {
 
   async insertMember(data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/members`, {
-      method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+      method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Member insert error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.members);
@@ -119,7 +138,7 @@ const DB = {
 
   async deleteMember(id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/members?id=eq.${id}`, {
-      method: 'DELETE', headers: SUPABASE_HEADERS
+      method: 'DELETE', headers: getAuthHeaders()
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Member delete error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate(Cache.keys.members);
@@ -130,7 +149,7 @@ const DB = {
   async fetchHistory(bugId) {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/history?bug_id=eq.${encodeURIComponent(bugId)}&order=created_at.desc`,
-      { headers: SUPABASE_HEADERS }
+      { headers: getAuthHeaders() }
     );
     if (!res.ok) throw new Error(`History fetch error ${res.status}`);
     return res.json();
@@ -138,7 +157,7 @@ const DB = {
 
   async insertHistory(bugId, author, field, oldValue, newValue) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/history`, {
-      method: 'POST', headers: SUPABASE_HEADERS,
+      method: 'POST', headers: getAuthHeaders(),
       body: JSON.stringify({ bug_id: bugId, author, field, old_value: String(oldValue||''), new_value: String(newValue||'') })
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
@@ -149,7 +168,7 @@ const DB = {
   async fetchComments(bugId) {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/comments?bug_id=eq.${encodeURIComponent(bugId)}&order=created_at.asc`,
-      { headers: SUPABASE_HEADERS }
+      { headers: getAuthHeaders() }
     );
     if (!res.ok) throw new Error(`Comments fetch error ${res.status}`);
     return res.json();
@@ -157,7 +176,7 @@ const DB = {
 
   async insertComment(bugId, author, content) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/comments`, {
-      method: 'POST', headers: SUPABASE_HEADERS,
+      method: 'POST', headers: getAuthHeaders(),
       body: JSON.stringify({ bug_id: bugId, author, content })
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Comment insert error ${res.status}`); }
@@ -166,7 +185,7 @@ const DB = {
 
   async deleteComment(id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/comments?id=eq.${id}`, {
-      method: 'DELETE', headers: SUPABASE_HEADERS
+      method: 'DELETE', headers: getAuthHeaders()
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
     return true;
@@ -176,7 +195,7 @@ const DB = {
   async fetchConfig() {
     const cached = typeof Cache !== 'undefined' && Cache.get(Cache.keys.config);
     if (cached) return cached;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/config`, { headers: SUPABASE_HEADERS });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/config`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Config fetch error ${res.status}`);
     const rows = await res.json();
     const out = {};
@@ -192,7 +211,7 @@ const DB = {
 
   async updateConfig(key, values) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/config?key=eq.${key}`, {
-      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify({ values })
+      method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify({ values })
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
     return true;
@@ -204,7 +223,7 @@ const DB = {
   async fetchClients() {
     const cached = typeof Cache !== 'undefined' && Cache.get('clients');
     if (cached) return cached;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?order=name.asc`, { headers: SUPABASE_HEADERS });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?order=name.asc`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Clients fetch error ${res.status}`);
     const data = await res.json();
     if (typeof Cache !== 'undefined') Cache.set('clients', data);
@@ -213,7 +232,7 @@ const DB = {
 
   async insertClient(data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
-      method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+      method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client insert error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate('clients');
@@ -222,7 +241,7 @@ const DB = {
 
   async updateClient(id, data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${id}`, {
-      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+      method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client update error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate('clients');
@@ -231,7 +250,7 @@ const DB = {
 
   async deleteClient(id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${id}`, {
-      method: 'DELETE', headers: SUPABASE_HEADERS
+      method: 'DELETE', headers: getAuthHeaders()
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Client delete error ${res.status}`); }
     if (typeof Cache !== 'undefined') Cache.invalidate('clients');
@@ -241,14 +260,14 @@ const DB = {
   /* ---- REQUESTS ---- */
   async fetchRequests(status = null) {
     const filter = status ? `?status=eq.${status}&order=created_at.desc` : '?order=created_at.desc';
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/requests${filter}`, { headers: SUPABASE_HEADERS });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/requests${filter}`, { headers: getAuthHeaders() });
     if (!res.ok) throw new Error(`Requests fetch error ${res.status}`);
     return res.json();
   },
 
   async insertRequest(data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/requests`, {
-      method: 'POST', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+      method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Insert error ${res.status}`); }
     return res.json();
@@ -256,7 +275,7 @@ const DB = {
 
   async updateRequest(id, data) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/requests?id=eq.${id}`, {
-      method: 'PATCH', headers: SUPABASE_HEADERS, body: JSON.stringify(data)
+      method: 'PATCH', headers: getAuthHeaders(), body: JSON.stringify(data)
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `Update error ${res.status}`); }
     return res.json();
@@ -264,7 +283,7 @@ const DB = {
 
   async deleteRequest(id) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/requests?id=eq.${id}`, {
-      method: 'DELETE', headers: SUPABASE_HEADERS
+      method: 'DELETE', headers: getAuthHeaders()
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
     return true;
