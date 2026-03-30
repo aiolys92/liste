@@ -44,6 +44,7 @@
             <th class="col-type"        data-sort="type">Type <span class="sort-arrow">↕</span></th>
             <th class="col-category"    data-sort="category">Catégorie <span class="sort-arrow">↕</span></th>
             <th class="col-id"          data-sort="id">ID <span class="sort-arrow">↕</span></th>
+            <th>Client</th>
             <th class="col-priority"    data-sort="priority">Priorité <span class="sort-arrow">↕</span></th>
             <th class="col-description">Description</th>
             <th class="col-state"       data-sort="state">État <span class="sort-arrow">↕</span></th>
@@ -128,6 +129,7 @@
   <script>
   const Archives = {
     bugs: [],
+    clients: [],
     search: '',
     currentPage: 1,
     itemsPerPage: 10,
@@ -138,14 +140,17 @@
 
   async init() {
     // Vérifier si admin connecté
-    this.isAdmin = sessionStorage.getItem('bo_auth') === 'ok';
+    try {
+      const s = JSON.parse(localStorage.getItem('sb_session') || '{}');
+      this.isAdmin = !!(s.access_token && s.expires_at > Math.floor(Date.now()/1000));
+    } catch(e) { this.isAdmin = false; }
     if (this.isAdmin) {
       const th = document.getElementById('thActions');
       if (th) th.textContent = 'Actions';
     }
       document.getElementById('loadingRow').style.display = '';
       try {
-        this.bugs = await DB.fetchArchived();
+        [this.bugs, this.clients] = await Promise.all([DB.fetchArchived(), DB.fetchClients()]);
       } catch(e) {
         document.getElementById('errorBanner').textContent = 'Erreur de chargement.';
         document.getElementById('errorBanner').style.display = 'block';
@@ -199,26 +204,26 @@
       });
       const tbody=document.getElementById('bugsTableBody');
       tbody.innerHTML=page.length===0
-        ?`<tr><td colspan="8"><div class="empty-state"><span class="empty-icon">📦</span><p>Aucune mission archivée ne correspond à la recherche.</p></div></td></tr>`
+        ?`<tr><td colspan="10"><div class="empty-state"><span class="empty-icon">📦</span><p>Aucune mission archivée ne correspond à la recherche.</p></div></td></tr>`
         :page.map(b=>this.renderRow(b)).join('');
       this.renderPagination(total,totalPages);
     },
 
     renderRow(b) {
-      const ts=this.toSlug,d=this.esc.bind(this);
-      return `<tr style="opacity:.75;cursor:pointer;" onclick="Archives.openDetail('${d(b.id)}')">
-        <td class="col-type"><span class="badge badge-type-${ts(b.type)}"><span class="badge-dot"></span>${d(b.type)}</span></td>
-        <td class="col-category"><span class="badge badge-cat-${ts(b.category)}"><span class="badge-dot"></span>${d(b.category)}</span></td>
-        <td class="col-id"><span class="bug-id">${d(b.id)}</span></td>
-        <td class="col-priority"><span class="badge badge-prio-${ts(b.priority)}"><span class="badge-dot"></span>${d(b.priority)}</span></td>
-        <td class="col-description"><div class="bug-desc"><div class="bug-desc-title">${d(b.title)}</div><div class="bug-desc-detail">${d(b.description)}</div></div></td>
-        <td class="col-state"><span class="badge badge-state-${ts(b.state)}"><span class="badge-dot"></span>${d(b.state)}</span></td>
-        <td class="col-date"><div class="bug-date"><div class="date-main">${this.fmtDate(b.date)}</div></div></td>
-        <td class="col-comments" style="text-align:center;">
-          <button class="comments-btn" onclick="event.stopPropagation();Archives.openComments('${d(b.id)}')" title="Commentaires">💬</button>
+      return `<tr style="opacity:.75;cursor:pointer;" onclick="Archives.openDetail('${esc(b.id)}')">
+        <td><span class="badge badge-type-${toSlug(b.type)}"><span class="badge-dot"></span>${esc(b.type)}</span></td>
+        <td><span class="badge badge-cat-${toSlug(b.category)}"><span class="badge-dot"></span>${esc(b.category)}</span></td>
+        <td><span class="bug-id">${esc(b.id)}</span></td>
+        <td>${clientBadge(b.client_id, Archives.clients)}</td>
+        <td><div class="bug-desc"><div class="bug-desc-title">${esc(b.title)}</div><div class="bug-desc-detail">${esc(b.description)}</div></div></td>
+        <td><span class="badge badge-prio-${toSlug(b.priority)}"><span class="badge-dot"></span>${esc(b.priority)}</span></td>
+        <td><span class="badge badge-state-${toSlug(b.state)}"><span class="badge-dot"></span>${esc(b.state)}</span></td>
+        <td><div class="date-main">${fmtDate(b.date)}</div></td>
+        <td style="text-align:center;">
+          <button class="comments-btn" onclick="event.stopPropagation();Archives.openComments('${esc(b.id)}')" title="Commentaires">💬</button>
         </td>
-        ${Archives.isAdmin ? `<td class="col-actions">
-          <button class="action-menu-btn" onclick="event.stopPropagation();Archives.openActionModal('${d(b.id)}')" title="Actions">···</button>
+        ${Archives.isAdmin ? `<td>
+          <button class="action-menu-btn" onclick="event.stopPropagation();Archives.openActionModal('${esc(b.id)}')" title="Actions">···</button>
         </td>` : '<td></td>'}
       </tr>`;
     },
