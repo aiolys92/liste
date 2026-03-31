@@ -298,8 +298,24 @@ const DB = {
   },
 
   /* ---- UTILS ---- */
+  async nextIdSafe() {
+    // Récupérer le MAX id directement depuis Supabase pour éviter les conflits de pagination
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/bugs?select=id&order=id.desc&limit=1`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await safeJson(res);
+      if (data && data.length) {
+        const num = parseInt(data[0].id.replace(/[^0-9]/g,'')) || 0;
+        return `MSN-${String(num + 1).padStart(3,'0')}`;
+      }
+    } catch(e) {}
+    return 'MSN-001';
+  },
+
   nextId(bugs) {
-    if (!bugs.length) return 'MSN-001';
+    if (!bugs || !bugs.length) return 'MSN-001';
     const nums = bugs.map(b => parseInt(b.id.replace(/[^0-9]/g,'')) || 0);
     return `MSN-${String(Math.max(...nums) + 1).padStart(3,'0')}`;
   }

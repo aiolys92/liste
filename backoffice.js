@@ -627,7 +627,7 @@ const BO = {
         }
         this.showNotif(`✓ Mission ${id} mise à jour`);
       } else {
-        const newId=DB.nextId(this.bugs);
+        const newId = await DB.nextIdSafe();
         const created=await DB.insertBug({id:newId,...data});
         await DB.insertHistory(newId,'Admin','création','','Mission créée');
         this.bugs.unshift(Array.isArray(created)?created[0]:{id:newId,...data});
@@ -879,7 +879,7 @@ const BO = {
     const btn = document.querySelector('#acceptModalOverlay .btn-primary');
     btn.textContent = 'Création…'; btn.disabled = true;
     try {
-      const newId  = DB.nextId(this.bugs);
+      const newId  = await DB.nextIdSafe();
       const created = await DB.insertBug({
         id: newId, type: req.type, category: req.category,
         priority, state, title: req.title, description: req.description,
